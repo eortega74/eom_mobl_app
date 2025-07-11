@@ -1,0 +1,4 @@
+# Dummy PingFederate License for local testing only
+# This file is not valid for production use.
+# Contact Ping Identity for a real license.
+LICENSE-KEY=DOMI-FAKE-KEY-1234567890

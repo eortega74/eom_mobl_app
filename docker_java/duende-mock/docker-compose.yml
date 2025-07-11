@@ -1,0 +1,7 @@
+
+version: '3.8'
+services:
+  duende-idsrv:
+    build: .\identityserver
+    ports:
+      - "5000:80"

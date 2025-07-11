@@ -1,0 +1,7 @@
+com\example\demo\DemoApplication.class
+com\example\demo\controller\HomeController.class
+com\ssodemo\config\SecurityConfig.class
+com\example\demo\controller\AuthController.class
+com\example\demo\service\LdapAuthService.class
+com\example\demo\config\LdapConfig.class
+com\example\demo\service\LdapLogger.class

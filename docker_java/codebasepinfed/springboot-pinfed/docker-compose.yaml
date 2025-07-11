@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./app
+    ports:
+      - "8082:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=default
+    depends_on:
+      - identityserver
+
+  # pingfed:
+  #   image: pingidentity/pingfederate:latest
+  #   ports:
+  #     - "9031:9031"
+  #   environment:
+  #     - SERVER_PROFILE_PATH=/opt/in
+  #   volumes:
+  #     - ./pingfed_local_profile.zip:/opt/in/pingfed_local_profile.zip
+  identityserver:
+    image: maxklenk/identityserver4
+    ports:
+      - "5000:80"

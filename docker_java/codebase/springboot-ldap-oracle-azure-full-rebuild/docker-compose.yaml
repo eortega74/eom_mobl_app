@@ -1,0 +1,45 @@
+version: '3.8'
+services:
+  ldap:
+    image: bitnami/openldap:latest
+    container_name: ldap
+    ports:
+      - "1389:1389"
+      - "636:636"
+    environment:
+      - LDAP_ROOT=dc=example,dc=com
+      - LDAP_ADMIN_USERNAME=admin
+      - LDAP_ADMIN_PASSWORD=admin
+      - LDAP_USERS=domiuser1
+      - LDAP_PASSWORDS=secret123
+    volumes:
+      - ldap_data:/bitnami/openldap
+
+  oracle:
+    image: gvenzl/oracle-xe:21.3.0
+    container_name: oracle
+    ports:
+      - "1521:1521"
+    environment:
+      ORACLE_PASSWORD: oracle
+      ORACLE_DATABASE: XEPDB1
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+
+  app:
+    build:
+      context: ./app
+    ports:
+      - "8081:8080"
+    depends_on:
+      - ldap
+      - oracle
+    environment:
+      LDAP_URL: ldap://ldap:1389
+      LDAP_USER_DN: cn=admin,dc=example,dc=com
+      LDAP_PASSWORD: admin
+      LDAP_BASE_DN: dc=example,dc=com
+
+volumes:
+  ldap_data:
+  oracle_data:
