@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  identityserver:
+    build: ./identity-server
+    ports:
+      - "5000:5000"
+    container_name: duende-server
+
+  auth-client:
+    build: ./auth-client
+    ports:
+      - "8080:8080"
+    container_name: spring-client
+    depends_on:
+      - identityserver
