@@ -1,0 +1,40 @@
+
+version: "3.8"
+services:
+  identity-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Pa$$12345
+    ports:
+      - "1433:1433"
+
+  identity-server:
+    build: ./identity-server
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=identity-db,1433;Database=IdentityDb;User=sa;Password=Pa$$12345;
+    depends_on:
+      - identity-db
+    ports:
+      - "5000:80"
+
+  identity-admin-ui:
+    build: ./identity-admin-ui
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=identity-db,1433;Database=IdentityDb;User=sa;Password=Pa$$12345;
+    depends_on:
+      - identity-db
+      - identity-server
+    ports:
+      - "5001:80"
+
+  java-app:
+    build: ./java-app
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    depends_on:
+      - identity-server
+    ports:
+      - "8080:8080"

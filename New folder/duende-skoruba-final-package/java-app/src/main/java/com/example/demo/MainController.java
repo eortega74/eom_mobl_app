@@ -1,0 +1,1 @@
+// MainController with secured endpoint

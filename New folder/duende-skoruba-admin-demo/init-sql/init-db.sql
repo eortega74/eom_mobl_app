@@ -1,0 +1,1 @@
+USE master; CREATE DATABASE IdentityDb;

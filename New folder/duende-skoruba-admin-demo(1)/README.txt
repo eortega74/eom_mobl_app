@@ -1,0 +1,1 @@
+Final functional build of Duende + Skoruba + Java Spring Boot OIDC is complete.

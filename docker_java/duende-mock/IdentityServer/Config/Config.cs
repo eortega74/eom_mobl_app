@@ -17,6 +17,7 @@ public static class Config
                 RequirePkce = false
             }
         };
+        
 
     public static IEnumerable<IdentityResource> IdentityResources =>
         new IdentityResource[] {

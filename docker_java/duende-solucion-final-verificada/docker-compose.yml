@@ -1,0 +1,23 @@
+
+version: '3.8'
+
+services:
+  duende-idsrv:
+    build: ./duende-mock/IdentityServer
+    ports:
+      - "5000:80"
+    networks:
+      - duende-net
+
+  springboot-app:
+    build: ./springboot-duende
+    ports:
+      - "8080:8080"
+    networks:
+      - duende-net
+    depends_on:
+      - duende-idsrv
+
+networks:
+  duende-net:
+    driver: bridge

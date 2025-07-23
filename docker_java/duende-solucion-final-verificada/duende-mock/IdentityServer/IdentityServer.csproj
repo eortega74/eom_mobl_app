@@ -1,0 +1,10 @@
+
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <CopyRazorGenerateFilesToPublishDirectory>true</CopyRazorGenerateFilesToPublishDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="IdentityServer4" Version="4.1.2" />
+  </ItemGroup>
+</Project>

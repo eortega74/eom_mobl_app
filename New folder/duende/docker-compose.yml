@@ -1,0 +1,25 @@
+version: "3.8"
+services:
+  duende-idsrv:
+    build:
+      context: ./duende-idsrv
+    ports:
+      - "5000:80"
+    environment:
+      - ASPNETCORE_URLS=http://+:80
+    networks:
+      - duende-net
+
+  springboot-app:
+    build:
+      context: ./springboot-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - duende-idsrv
+    networks:
+      - duende-net
+
+networks:
+  duende-net:
+    driver: bridge
