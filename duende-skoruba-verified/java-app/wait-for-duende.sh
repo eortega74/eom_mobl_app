@@ -1,11 +1,7 @@
 #!/bin/sh
-
-echo "⏳ Waiting for Duende IdentityServer to be ready..."
-
-until curl -sSf http://identity-server:5000/.well-known/openid-configuration > /dev/null; do
-  echo "⏱ Still waiting for IdentityServer at http://identity-server:5000..."
+echo "Waiting for Duende IdentityServer..."
+until curl -s http://identity-server:5000 > /dev/null; do
   sleep 2
 done
-
-echo "✅ IdentityServer is UP, starting Java app..."
+echo "Duende is up, starting the app..."
 exec java -jar app.jar
