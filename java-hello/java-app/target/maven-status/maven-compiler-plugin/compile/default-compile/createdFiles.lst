@@ -1,0 +1,5 @@
+com\example\demo\controller\HelloController.class
+com\example\demo\DemoApplication.class
+com\example\demo\config\SecurityConfig.class
+com\example\demo\config\HttpCookieOAuth2AuthorizationRequestRepository.class
+com\example\demo\config\CustomAuthenticationSuccessHandler.class

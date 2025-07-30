@@ -1,0 +1,76 @@
+
+version: "3.8"
+services:
+  # identity-db:
+  #   image: mcr.microsoft.com/mssql/server:2022-latest
+  #   container_name: identity-db
+  #   environment:
+  #     - ACCEPT_EULA=Y
+  #     - MSSQL_PID=Developer
+  #     - SA_PASSWORD=Pa$$12345
+  #   ports:
+  #     - "1433:1433"
+  #   healthcheck:
+  #     test: ["CMD", "sqlcmd", "-U", "sa", "-P", "Pa$$12345", "-Q", "SELECT 1"]
+  #     interval: 20s
+  #     timeout: 10s
+  #     retries: 10
+  #   volumes:
+  #     - mssql_data:/var/opt/mssql
+
+  identity-server:
+    build: ./IdentityServerWithUI   # identity-server
+    container_name: identity-server
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      # - ConnectionStrings__DefaultConnection=Server=identity-db,1433;Database=IdentityDb;User=sa;Password=Pa$$12345;
+    ports:
+      - "5000:5000"
+    # command: ["/seed"]  
+    volumes:
+      - ./data:/app/data
+    networks:
+      - duende-net
+
+  # identity-admin-ui:
+  #   build: 
+  #     context: ./identity-admin-ui
+  #     dockerfile: src/Skoruba.IdentityServer4.Admin/Dockerfile
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=Development
+  #     - ConnectionStrings__DefaultConnection=Server=identity-db,1433;Database=IdentityDb;User=sa;Password=Pa12345;
+  #   depends_on:
+  #     - identity-db
+  #     - identity-server
+  #   ports:
+  #     - "5001:80"
+
+  java-app:
+    build: 
+      context: ./java-app
+      dockerfile: Dockerfile
+    container_name: java-app
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    depends_on:
+      - identity-server
+    ports:
+      - "8080:8080"
+    networks:
+      - duende-net      
+#   # Este contenedor opcional se puede usar para hacer pruebas interactivas (sqlcmd)
+#   mssql-tools:
+#     image: mcr.microsoft.com/mssql-tools
+#     container_name: mssql-tools
+#     depends_on:
+#       - identity-db
+#     entrypoint: /bin/bash
+#     tty: true
+#     stdin_open: true
+#     networks:
+#       - default
+
+# volumes:
+#   mssql_data:
+networks:
+  duende-net:

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Home</title>
+</head>
+<body>
+<h1>Bienvenido</h1>
+
+<div th:if="${user != null}">
+    <p><strong>Nombre:</strong> <span th:text="${user['name']}"></span></p>
+    <p><a th:href="@{/logout}">Logout</a></p>
+</div>
+
+<div th:if="${user == null}">
+    <a href="/oauth2/authorization/duende">Login con IdentityServer</a>
+</div>
+
+</body>
+</html>
