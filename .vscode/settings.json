@@ -1,3 +1,6 @@
 {
-    "DockerRun.DisableDockerrc": true
+    "DockerRun.DisableDockerrc": true,
+    "java.compile.nullAnalysis.mode": "automatic",
+    "azure-pipelines.tenant": "7a18110d-ef9b-4274-acef-e62ab0fe28ed",
+    "@azure.argTenant": "7a18110d-ef9b-4274-acef-e62ab0fe28ed"
 }

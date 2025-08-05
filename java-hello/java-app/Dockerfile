@@ -1,16 +1,9 @@
-FROM openjdk:17-jdk
+FROM maven:3.9.6-eclipse-temurin-17
+
 WORKDIR /app
 
-# Copia el JAR compilado desde tu proyecto local
-COPY target/demo-0.0.4-SNAPSHOT.jar app.jar
+# Copiar el código al contenedor
+COPY . /app
 
-COPY wait-for-duende.sh wait-for-duende.sh
-
-RUN chmod +x wait-for-duende.sh
-
-ENTRYPOINT ["./wait-for-duende.sh"]
-# Expone el puerto (si aplica)
-EXPOSE 8080
-
-# Comando para iniciar la aplicación
-# ENTRYPOINT ["java", "-jar", "app.jar"]
+# Comando por defecto: compilar y copiar el JAR
+CMD ["bash", "-c", "mvn clean package -DskipTests && mkdir -p /output && cp target/*.jar /output/app.jar"]
