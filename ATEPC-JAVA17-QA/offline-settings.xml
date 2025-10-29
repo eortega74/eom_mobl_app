@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+          http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+  <!-- LOCAL REPOSITORY POINTING TO CACHED DEPENDENCIES -->
+  <localRepository>c:\Users\eomar\OneDrive\eom_dock_img\repos\BPPR\eom_mobl_app\ATEPC-JAVA17-QA\m2-cache\repository</localRepository>
+
+  <!-- OFFLINE MODE - NO EXTERNAL REPOSITORIES -->
+  <offline>true</offline>
+
+  <!-- PROFILES FOR OFFLINE BUILD -->
+  <profiles>
+    <profile>
+      <id>offline-build</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <repositories>
+        <!-- Only local repository, no external repos -->
+      </repositories>
+      <pluginRepositories>
+        <!-- Only local repository, no external repos -->
+      </pluginRepositories>
+    </profile>
+  </profiles>
+
+</settings>

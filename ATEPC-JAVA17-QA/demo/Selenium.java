@@ -1,5 +1,7 @@
 package com.example.demo;
 
+// SELENIUM CLASS COMMENTED OUT - DEPENDENCIES NOT AVAILABLE IN CACHE
+/*
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.openqa.selenium.WebDriver;
@@ -19,8 +21,11 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
 @Component
-public class Selenium implements CommandLineRunner {
-
+*/
+public class Selenium /*implements CommandLineRunner*/ {
+    
+    // ALL SELENIUM CODE COMMENTED OUT - DEPENDENCIES NOT AVAILABLE IN CACHE
+    /*
     @Override
     public void run(String... args) throws IOException {
         File file = new File("/app/reports/testcases.txt");
@@ -191,4 +196,5 @@ public class Selenium implements CommandLineRunner {
             fw.close();
        }
     }
+    */
 }
