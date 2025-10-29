@@ -53,7 +53,7 @@ env:
 jobs:
   # Job 1: Build Application and Run Unit Tests
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: App-Factory-Win-2019
     
     steps:
     - name: Checkout Source Code
@@ -70,42 +70,48 @@ jobs:
     
     - name: Clean and Validate Maven Configuration
       run: |
-        echo "Cleaning and validating Maven project configuration..."
+        Write-Host "Cleaning and validating Maven project configuration..."
         mvn clean validate
     
     - name: Compile EOM QA Application
       run: |
-        echo "Compiling EOM QA Spring Boot application..."
+        Write-Host "Compiling EOM QA Spring Boot application..."
         mvn compile
     
     - name: Execute Unit Tests
       run: |
-        echo "Executing unit tests (excluding Selenium tests)..."
-        mvn test -Dtest="!com.example.demo.Selenium" || true
+        Write-Host "Executing unit tests (excluding Selenium tests)..."
+        mvn test -Dtest="!com.example.demo.Selenium"
+        if ($LASTEXITCODE -ne 0) { Write-Host "Tests failed but continuing..." }
         
     - name: Build Application JAR Package
       run: |
-        echo "Building Spring Boot JAR package..."
+        Write-Host "Building Spring Boot JAR package..."
         mvn package -DskipTests
         
         # Verify JAR artifact was created successfully
-        if [ -f "target/eom-qa-simple-1.0.0-SNAPSHOT.jar" ]; then
-          echo "JAR artifact created successfully"
-          ls -la target/*.jar
-        else
-          echo "JAR creation failed - artifact not found"
-          ls -la target/
+        if (Test-Path "target/eom-qa-simple-1.0.0-SNAPSHOT.jar") {
+          Write-Host "JAR artifact created successfully"
+          Get-ChildItem target/*.jar | Format-Table Name, Length
+        } else {
+          Write-Host "JAR creation failed - artifact not found"
+          Get-ChildItem target/ | Format-Table
           exit 1
-        fi
+        }
     
     - name: Generate Build Summary Report
       run: |
-        echo "## Build Results Summary" > build-report.md
-        echo "- **Release Version**: ${{ env.RELEASE_VERSION }}" >> build-report.md
-        echo "- **Java Version**: ${{ env.JAVA_VERSION }}" >> build-report.md
-        echo "- **Source Branch**: ${{ env.BRANCH_NAME }}" >> build-report.md
-        echo "- **JAR File Size**: $(du -h target/*.jar | cut -f1)" >> build-report.md
-        echo "- **Build Timestamp**: $(date)" >> build-report.md
+        $jarSize = (Get-ChildItem target/*.jar | Measure-Object -Property Length -Sum).Sum / 1MB
+        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        
+        @"
+        ## Build Results Summary
+        - **Release Version**: ${{ env.RELEASE_VERSION }}
+        - **Java Version**: ${{ env.JAVA_VERSION }}
+        - **Source Branch**: ${{ env.BRANCH_NAME }}
+        - **JAR File Size**: $([math]::Round($jarSize, 2)) MB
+        - **Build Timestamp**: $timestamp
+        "@ | Out-File -FilePath build-report.md -Encoding utf8
     
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v3
@@ -119,7 +125,7 @@ jobs:
   # Job 2: Execute Selenium QA Automation Tests
   selenium-qa-tests:
     needs: [build-and-test]
-    runs-on: ubuntu-latest
+    runs-on: App-Factory-Win-2019
     if: github.event.inputs.run_selenium_tests != 'false'
     
     services:
@@ -241,7 +247,7 @@ jobs:
   # Job 3: Integration Tests with Docker
   docker-integration-test:
     needs: [build-and-test]
-    runs-on: ubuntu-latest
+    runs-on: App-Factory-Win-2019
     if: github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'integration'
     
     steps:
@@ -456,7 +462,7 @@ jobs:
 
   # Job 5: Final Pipeline Report
   pipeline-summary:
-    runs-on: ubuntu-latest
+    runs-on: App-Factory-Win-2019
     needs: [build-and-test, selenium-qa-tests, docker-integration-test, deploy-to-azure]
     if: always()
     
