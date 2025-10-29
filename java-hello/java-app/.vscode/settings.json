@@ -1,0 +1,77 @@
+{
+  "github-enterprise.uri": "https://github-us.utc.com/",
+  "github.gitAuthentication": true,
+  "githubActions.workflows.pinned.workflows": [
+    ".github/workflows/build-and-deploy.yml"
+  ],
+  "githubActions.workflows.pinned.refresh.enabled": true,
+  "githubActions.workflows.pinned.refresh.interval": 30,
+  
+  // Spring Boot Configuration
+  "spring-boot.ls.java.home": null,
+  "spring-boot.ls.java.heap": "1024m",
+  "spring-boot.ls.java.vmargs": [],
+  "spring-boot.ls.problem.application-properties.PROP_UNKNOWN_PROPERTY": "WARNING",
+  "spring-boot.ls.problem.application-properties.PROP_INVALID_BEAN_NAVIGATION": "WARNING",
+  "spring-boot.ls.problem.application-properties.PROP_VALUE_TYPE_MISMATCH": "ERROR",
+  "spring.initializr.defaultLanguage": "Java",
+  "spring.initializr.defaultGroupId": "com.example",
+  "spring.initializr.defaultArtifactId": "demo",
+  "spring.initializr.defaultPackaging": "JAR",
+  "spring.initializr.defaultJavaVersion": "11",
+  
+  // Java Configuration para detectar múltiples proyectos
+  "java.configuration.workspaceCacheLimit": 90,
+  "java.configuration.maven.userSettings": "",
+  "java.import.maven.enabled": true,
+  "java.import.gradle.enabled": true,
+  
+  // Spring Boot Dashboard Configuration
+  "spring-boot.ls.checkjvm": false,
+  "spring-boot.ls.problem.boot-version": "HINT",
+  "spring-boot.ls.problem.deprecated-property": "WARNING",
+  "spring-boot.ls.problem.duplicate-property": "WARNING",
+  
+  // Workspace folders para Spring Boot
+  "java.project.sourcePaths": [
+    "src/main/java"
+  ],
+  "java.project.outputPath": "target/classes",
+  "java.project.referencedLibraries": [
+    "lib/**/*.jar"
+  ],
+  
+  // Java Configuration
+  "java.debug.settings.onBuildFailureProceed": true,
+  "java.debug.settings.enableRunDebugCodeLens": true,
+  "java.configuration.detectJdksAtStart": true,
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.compile.nullAnalysis.mode": "automatic",
+  "java.sources.organizeImports.starThreshold": 99,
+  "java.sources.organizeImports.staticStarThreshold": 99,
+  
+  // Maven Configuration  
+  "maven.executable.path": null,
+  "maven.terminal.useJavaHome": true,
+  "maven.terminal.customEnv": [],
+  "files.associations": {
+    "*.yml": "yaml",
+    "*.yaml": "yaml"
+  },
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": "/.github/workflows/*.{yml,yaml}"
+  },
+  "DockerRun.DisableDockerrc": true,
+  "DockerRun.Containers": [
+    "f984bf4e9d95",
+    "7dc1a59d0e16",
+    "3a48b6dd0a84",
+    "5f2d282179c0",
+    "2bac0b876179",
+    "8dd11e2121cd",
+    "98ec86f8f360",
+    "6314c07dc98f",
+    "0963d778cbfd",
+    "f506e9a08f22"
+  ]
+}

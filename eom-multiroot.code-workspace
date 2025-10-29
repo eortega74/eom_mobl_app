@@ -1,0 +1,43 @@
+{
+  "folders": [
+    {
+      "name": "java-hello-app (MAIN)",
+      "path": "./java-hello/java-app"
+    },
+    {
+      "name": "duende-skoruba-verified",
+      "path": "./duende-skoruba-verified/java-app"
+    },
+    {
+      "name": "duende-skoruba-admin-demo", 
+      "path": "./duende-skoruba-admin-demo/java-app"
+    },
+    {
+      "name": "demo-oidc-java-app",
+      "path": "./demo-oidc-java-app"
+    },
+    {
+      "name": "duende-java-oidc-final-verified",
+      "path": "./New folder/duende-java-oidc-final-verified-100/springboot-app"
+    },
+    {
+      "name": "duende-skoruba-final-package",
+      "path": "./New folder/duende-skoruba-final-package/java-app"
+    }
+  ],
+  "settings": {
+    "java.configuration.detectJdksAtStart": true,
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "spring-boot.ls.java.home": null,
+    "maven.executable.path": null,
+    "java.compile.nullAnalysis.mode": "automatic"
+  },
+  "extensions": {
+    "recommendations": [
+      "vscjava.vscode-java-pack",
+      "vscjava.vscode-spring-initializr", 
+      "vscjava.vscode-spring-boot-dashboard",
+      "pivotal.vscode-spring-boot"
+    ]
+  }
+}

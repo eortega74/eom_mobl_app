@@ -1,0 +1,32 @@
+terraform {
+  required_providers {
+    azurerm = {
+      source = "hashicorp/azurerm"
+      version = "3.29.1"
+    }
+  }
+}
+
+provider "azurerm" {
+  subscription_id = "AZURE_SUBSCRIPTION"
+  tenant_id       = "AZURE_TENANT"
+  client_id       = "AZURE_SP"
+  client_secret   = "AZURE_SP_SECRET"
+  environment     = "usgovernment"
+  features {}
+}
+
+terraform {
+  backend "azurerm" {
+    environment          = "usgovernment"
+    use_azuread_auth     = true
+    subscription_id      = "AZURE_SUBSCRIPTION"
+    tenant_id            = "AZURE_TENANT"
+    client_id            = "AZURE_SP"
+    client_secret        = "AZURE_SP_SECRET"
+    storage_account_name = "STORAGE_ACCOUNT"
+    container_name       = "tfstate"
+    key                  = "ENVIRONMENT.tfstate"
+  }
+}
+

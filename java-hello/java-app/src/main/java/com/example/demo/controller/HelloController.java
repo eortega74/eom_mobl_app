@@ -14,6 +14,8 @@ public class HelloController {
                   <body style='text-align:center; font-family:Arial;'>
                     <h1 style='color:green'>✅ Hello RTX Team</h1>
                     <img src='/images/logo.png' width='200'/>
+                    <br/>
+                    <img src='/images/AI.jpg' width='600' height='350'/>
                     <p>We are on Azure</p>
                   </body>
                 </html>
