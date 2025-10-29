@@ -1,0 +1,321 @@
+name: CI
+
+on:
+  push:
+    branches: [ "NotYet", "ben" ]
+#     paths-ignore:
+#       - '.github/build/**'
+#       - '.github/deploy/**'
+#       - '.github/workflows/**'
+  workflow_dispatch:
+    inputs:
+      run_coverity:
+        description: "required to push"
+        type: boolean
+        default: true
+      run_blackduck:
+        description: "required to push"
+        type: boolean
+        default: true
+
+# env:
+#   JF_BUILD_REPO: "atepc-usp-java17-spring-generic-dev-l" #change later
+#   JF_MAVEN_REPO: "atepc-usp-java17-spring-maven-dev-l"
+#   JFROG_URL: "https://artifactory.utc.com/artifactory"
+#   PUBLISH_PROFILE_PATH: ./.github/config/publish-profile.xml
+#   #JF_USER: ${{ secrets.JF_USER }}
+#   #JF_TOKEN: ${{ secrets.JF_USER_TOKEN }}
+#   #${{ secrets.JF_ENCRYPTED_PASSWORD }}
+#   #JF_AUTH: ${{ secrets.JF_AUTH }}
+#   #JF_PASSWORD: ${{ secrets.JF_PASSWORD }}
+#   WEBAPP_FOLDER_NAME: "ATE-JAVA17-SPRING"
+#   ARTIFACTORY_FOLDER_NAME: "ATEPC-JAVA17-SPRING"
+#   PROPERTY_FILE_NAME: "ATE-JAVA17-SPRING-US.properties"
+#   RELEASE_VERSION: "v1.0.${{ github.run_number }}"
+#   RELEASE_VERSION_WITH_BRANCH_PREFIX: "${{ github.ref_name }}-v1.0.${{ github.run_number }}"
+#   #GIT_PAT: ${{ secrets.GIT_PAT }}
+#   BRANCH_NAME: "${{ github.ref_name }}"
+#   COVERITY_PROJECT: "atepc-java17"
+#   COVERITY_URL: "https://coverity.utc.com:8443/"
+#   COVERITY_STREAM: "atepc-java17-Trunk"
+#   GREETING: "Hello Coverity"
+#   PATH_FOR_FILES_TO_STORE: .\pom.xml
+
+#   SRM_PROJECT_ID: ${{ secrets.SRM_PROJECT_ID }}
+#   SRM_PROJECT_TOKEN: ${{ secrets.SRM_PROJECT_TOKEN }}
+
+jobs:
+  Coverity_Scan:
+    #if: github.event.inputs.run_coverity == 'true'
+    runs-on: App-Factory-Win-2019
+    environment: Prod
+    steps:
+      - name: Fetch code
+        uses: actions/checkout@v3
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+       
+      
+#       - name: Read Env variables for Coverity scans
+#         run: |
+#           Get-Content .github/config/secrets.env | ForEach-Object {
+#             if ($_ -match '^\s*([^#][^=]+)=(.+)$') {
+#               "$($matches[1])=$($matches[2])" >> $env:GITHUB_ENV
+#             }
+#           }
+          
+      - name: Get secretes from BT
+        uses: rtx-actions/bt-vault-action@v1
+        with:
+          base-url: "https://pam.app.ray.com/BeyondTrust/api/public/v3/"
+          auth-key: ${{ vars.BTSS_API_KEY}}
+          run-as: ${{ vars.BTSS_RUNAS_USER}}
+      
+
+      - name: Setup XetaDev MS Build
+        uses: vendor-actions/setup-msbuild@v1.1
+        with:
+          vs-version: '[17,19.0)'
+          vswhere-path: 'c:\apps\'
+
+      - name: Run Coverity Scans
+        run: |
+          Write-Host "Job1 Step1: ate-java17_COVERITY_PROJECT=$env:COVERITY_PROJECT" 
+          Write-Host "Job1 Step1: ate-java17_COVERITY_URL=$env:COVERITY_URL" 
+          Write-Host "Job1 Step1: ate-java17_COVERITY_STREAM=$env:COVERITY_STREAM"
+          Write-Host "Job1 Step1: ate-java17_COVERITY_COMMITER_USERNAME=$env:COVERITY_COMMITER_USERNAME"
+          Write-Host "Job1 Step1: ate-java17_COVERITY_COMMITER_PASSWORD=$env:COVERITY_COMMITER_PASSWORD" 
+          .\.github\build\coverity.ps1
+
+  BlackDuck_Scan:
+    runs-on: App-Factory-Win-2019
+    environment: Prod
+#     env:
+#       BLACKDUCK_URL: "https://blackduck.utc.com"
+#       DETECT_PROJECT_NAME: "atepc-java"
+#       DETECT_PROJECT_VERSION: "ben"
+
+    steps:
+      - name: Fetch code
+        uses: actions/checkout@v3
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          
+      - name: Get secretes from BT
+        uses: rtx-actions/bt-vault-action@v1
+        with:
+          base-url: "https://pam.app.ray.com/BeyondTrust/api/public/v3/"
+          auth-key: ${{ vars.BTSS_API_KEY}}
+          run-as: ${{ vars.BTSS_RUNAS_USER}}
+          
+#       - name: Load secrets from file
+#         run: |
+#           Get-Content .github/config/secrets.env | ForEach-Object {
+#             if ($_ -match '^\s*([^#][^=]+)=(.+)$') {
+#               "$($matches[1])=$($matches[2])" >> $env:GITHUB_ENV
+#             }
+#           }
+
+      - name: Setup XetaDev MS Build
+        uses: vendor-actions/setup-msbuild@v1.1
+        with:
+          vs-version: '[17,19.0)'
+          vswhere-path: 'c:\apps\'
+
+      - name: BlackDuck security scan
+        run: |
+          Write-Host "Job1 Step1: ate-java17_BLACKDUCK_URL=$env:BLACKDUCK_URL" 
+          Write-Host "Job1 Step1: ate-java17_DETECT_PROJECT_NAME=$env:DETECT_PROJECT_NAME" 
+          Write-Host "Job1 Step1: ate-java17_DETECT_PROJECT_VERSION=$env:DETECT_PROJECT_VERSION" 
+          Write-Host "Job1 Step1: ate-java17_BLACKDUCK_API_TOKEN=$env:BLACKDUCK_API_TOKEN" 
+
+          $POM_LOCATION = 'C:/apps/actions-runner/_work/ATEPC-JAVA17-SPRING/ATEPC-JAVA17-SPRING'
+          Set-Location $POM_LOCATION
+          mvn -s settings.xml clean package -DskipTests
+          cd "C:\apps\blackduck"
+          echo "Start of batch script"
+          Get-Content .\detect8.bat
+          echo "End of batch script"
+          $env:BLACKDUCK_URL = $env:ATE_JAVA17_BLACKDUCK_URL
+          $env:BLACKDUCK_API_TOKEN = $env:ATE_JAVA17_BLACKDUCK_API_TOKEN
+          $env:DETECT_PROJECT_NAME = $env:ATE_JAVA17_DETECT_PROJECT_NAME
+          $env:DETECT_PROJECT_VERSION = $env:ATE_JAVA17_DETECT_PROJECT_VERSION
+          #.\.github\build\blackduck.bat
+          .\detect8.bat -h
+  
+  Start_SRM_Analysis_And_Get_Results:
+    #if: github.event.inputs.run_coverity == 'true' && github.event.inputs.run_blackduck == 'true'
+    runs-on: App-Factory-Win-2019
+    environment: Prod
+    needs: [BlackDuck_Scan, Coverity_Scan] #removed coverity for testing purposes Coverity_Scan, 
+
+    steps:
+      - name: Fetch code
+        uses: actions/checkout@v3
+        
+      - name: Setup Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+#       - name: Read Env variables for Coverity scans
+#         run: |
+#           Get-Content .github/config/secrets.env | ForEach-Object {
+#             if ($_ -match '^\s*([^#][^=]+)=(.+)$') {
+#               "$($matches[1])=$($matches[2])" >> $env:GITHUB_ENV
+#             }
+#           }
+      - name: Get secretes from BT
+        uses: rtx-actions/bt-vault-action@v1
+        with:
+          base-url: "https://pam.app.ray.com/BeyondTrust/api/public/v3/"
+          auth-key: ${{ vars.BTSS_API_KEY}}
+          run-as: ${{ vars.BTSS_RUNAS_USER}}
+      
+        
+      - name: Execute_Start_SRM_Analysis_And_Get_Results
+        run: |
+          Write-Host "Job1 Step1: ate-java17_PROJECT_NAME=$env:PROJECT_NAME" 
+          Write-Host "Job1 Step1: ate-java17_TIS_SRM_ID=$env:TIS_SRM_ID" 
+          Write-Host "Job1 Step1: ate-java17_TIS_SRM_TOKEN=$env:TIS_SRM_TOKEN" 
+          .\.github\build\srm.ps1
+    
+
+
+
+
+
+
+   
+              
+  build-and-push:
+    env:
+#       PATH_FOR_FILES_TO_ZIP: .\app.jar 
+      RELEASE_VERSION: "v1.0.${{ github.run_number }}"
+      RELEASE_VERSION_WITH_BRANCH_PREFIX: "${{ github.ref_name }}-v1.0.${{ github.run_number }}"
+      BRANCH_NAME: "${{ github.ref_name }}"
+
+    runs-on: App-Factory-Win-2019
+    environment: Prod
+    steps:
+      - name: Fetch code
+        uses: actions/checkout@v3
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          
+      #may delete later
+#       - name: Load secrets from file
+#         #shell: pwsh
+#         run: |
+#           Get-Content .github/config/secrets.env | ForEach-Object {
+#             if ($_ -match '^\s*([^#][^=]+)=(.+)$') {
+#               "$($matches[1])=$($matches[2])" >> $env:GITHUB_ENV
+#             }
+#           }
+
+      - name: Get secretes from BT
+        uses: rtx-actions/bt-vault-action@v1
+        with:
+          base-url: "https://pam.app.ray.com/BeyondTrust/api/public/v3/"
+          auth-key: ${{ vars.BTSS_API_KEY}}
+          run-as: ${{ vars.BTSS_RUNAS_USER}}
+
+
+      - name: Push to Artifactory
+        run: |
+          Write-Host "Job1 Step1: ate-java17_JF_USER=$env:JF_USER" 
+          Write-Host "Job1 Step1: ate-java17_JF_USER_TOKEN=$env:JF_USER_TOKEN" 
+          Write-Host "Job1 Step1: ate-java17_PATH_FOR_FILES_TO_ZIP=$env:PATH_FOR_FILES_TO_ZIP" 
+          Write-Host "Job1 Step1: ate-java17_PROPERTY_FILE_NAME=$env:PROPERTY_FILE_NAME" 
+          Write-Host "Job1 Step1: ate-java17_JFROG_URL=$env:JFROG_URL" 
+          Write-Host "Job1 Step1: ate-java17_JF_BUILD_REPO=$env:JF_BUILD_REPO" 
+          Write-Host "Job1 Step1: ate-java17_WEBAPP_FOLDER_NAME=$env:WEBAPP_FOLDER_NAME"           
+          if (-not $env:JF_USER) { echo "undefined" } else { echo $env:JF_USER }
+          echo "JF_USER_TOKEN:"
+          if (-not $env:JF_USER_TOKEN) { echo "undefined" } else { echo $env:JF_USER_TOKEN }
+          .\.github\build\create-webapp-package-and-store-in-artifactory.ps1  
+  
+  
+  deploy-to-azure:
+    needs: [build-and-push, Start_SRM_Analysis_And_Get_Results]
+    runs-on: App-Factory-Win-2019
+    environment: Prod
+    env:
+      RELEASE_VERSION: "v1.0.${{ github.run_number }}"
+      RELEASE_VERSION_WITH_BRANCH_PREFIX: "${{ github.ref_name }}-v1.0.${{ github.run_number }}"
+      BRANCH_NAME: "${{ github.ref_name }}"
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Setup Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          
+      #may delete later
+#       - name: Load secrets from file
+#         #shell: pwsh
+#         run: |
+#           Get-Content .github/config/secrets.env | ForEach-Object {
+#             if ($_ -match '^\s*([^#][^=]+)=(.+)$') {
+#               "$($matches[1])=$($matches[2])" >> $env:GITHUB_ENV
+#             }
+#           }
+
+      - name: Get secretes from BT
+        uses: rtx-actions/bt-vault-action@v1
+        with:
+          base-url: "https://pam.app.ray.com/BeyondTrust/api/public/v3/"
+          auth-key: ${{ vars.BTSS_API_KEY}}
+          run-as: ${{ vars.BTSS_RUNAS_USER}}
+
+              
+      - name: Fetch package.zip from Artifactory
+        run: |
+          Write-Host "Job1 Step1: ate-java17_JF_USER=$env:JF_USER" 
+          Write-Host "Job1 Step1: ate-java17_JF_USER_TOKEN=$env:JF_USER_TOKEN" 
+          Write-Host "Job1 Step1: ate-java17_JFROG_URL=$env:JFROG_URL" 
+          Write-Host "Job1 Step1: ate-java17_JF_BUILD_REPO=$env:JF_BUILD_REPO" 
+          Write-Host "Job1 Step1: ate-java17_WEBAPP_FOLDER_NAME=$env:WEBAPP_FOLDER_NAME" 
+          Write-Host "Job1 Step1: ate-java17_PUBLISH_PROFILE=$env:PUBLISH_PROFILE" 
+          .\.github\deploy\get-webapp-package.ps1  
+          
+      - name: Setup XetaDev MS Build
+        uses: vendor-actions/setup-msbuild@v1.1
+        with:
+          vs-version: '[17,19.0)'
+          vswhere-path: 'c:\apps\'
+
+      - name: Read publish profile
+        run: |
+          #$Content = Get-Content ".github/config/publish-profile.xml" -Raw
+          #echo "PUBLISH_PROFILE=$Content" >> $env:GITHUB_ENV
+          echo "Publish Profile: $env:ATE_JAVA17_PUBLISH_PROFILE"
+          echo "PUBLISH_PROFILE=$env:ATE_JAVA17_PUBLISH_PROFILE" >> $env:GITHUB_ENV
+
+
+    
+  
+      - name: Deploy to Azure
+        uses: vendor-actions/azure-webapps-deploy@v2
+        with:
+          app-name: ate-java17 #may change later
+          publish-profile: ${{ env.PUBLISH_PROFILE }}
+
+            

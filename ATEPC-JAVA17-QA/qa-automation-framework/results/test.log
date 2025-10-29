@@ -1,0 +1,10 @@
+INFO    2025-10-23 16:00:18,278 [main] com.rtx.eas.qas.it.test.seleniumlite.MasterProject.selenium.BaseConfiguration [] - --------------------------------------------------
+INFO    2025-10-23 16:00:18,294 [main] com.rtx.eas.qas.it.test.seleniumlite.MasterProject.selenium.BaseConfiguration [] - --------------- START SCENARIO -------------------
+INFO    2025-10-23 16:00:18,294 [main] com.rtx.eas.qas.it.test.seleniumlite.MasterProject.selenium.BaseConfiguration [] - --------------2025_10_23_16_00_18-----------------
+INFO    2025-10-23 16:00:18,295 [main] com.rtx.eas.qas.it.test.seleniumlite.MasterProject.selenium.BaseConfiguration [] - --------------------------------------------------
+INFO    2025-10-23 16:00:18,295 [main] com.rtx.eas.qas.it.test.seleniumlite.MasterProject.selenium.BaseConfiguration [] - Test execution is occurring on the local side.
+INFO    2025-10-23 16:00:28,899 [main] com.rtx.eas.qas.it.test.seleniumlite.MasterProject.selenium.BaseConfiguration [] - Initialized the page elements for Google
+INFO    2025-10-23 16:00:28,904 [main] com.rtx.eas.qas.it.test.seleniumlite.MasterProject.selenium.BaseConfiguration [] - Page Title: Google
+INFO    2025-10-23 16:00:30,860 [main] com.rtx.eas.qas.it.test.seleniumlite.MasterProject.selenium.BaseConfiguration [] - --------------------------------------------------
+INFO    2025-10-23 16:00:30,861 [main] com.rtx.eas.qas.it.test.seleniumlite.MasterProject.selenium.BaseConfiguration [] - -------- SCENARIO COMPLETE - PASSED --------------
+INFO    2025-10-23 16:00:30,861 [main] com.rtx.eas.qas.it.test.seleniumlite.MasterProject.selenium.BaseConfiguration [] - --------------------------------------------------

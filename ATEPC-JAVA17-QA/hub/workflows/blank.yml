@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - 'NotYet'
+    paths-ignore:
+      - '.github/build/**'
+      - '.github/deploy/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+env:
+  JF_BUILD_REPO: "atepc-usp-java17-spring-generic-dev-l" #change later
+  JFROG_URL: "https://artifactory.utc.com/artifactory"
+  JF_USER: "e40100646" #${{ secrets.JF_USER }}
+  JF_USER_TOKEN: "eyJ2ZXIiOiIyIiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYiLCJraWQiOiJhTkYtUFlVNUt2clRuUTRKRkdtekMwcUpwRnBGZDIwQXZmWGcwMFJZU21vIn0.eyJleHQiOiJ7XCJyZXZvY2FibGVcIjpcInRydWVcIn0iLCJzdWIiOiJqZmFjQDAxZjBmbTZxZDJ6MmttMXFxZnpiNXMxY3ZmXC91c2Vyc1wvZTQwMTAwNjQ2Iiwic2NwIjoiYXBwbGllZC1wZXJtaXNzaW9uc1wvdXNlciIsImF1ZCI6IipAKiIsImlzcyI6ImpmZmVAMDAwIiwiZXhwIjoxNzg1OTQxMzQyLCJpYXQiOjE3NTQ0MDUzNDIsImp0aSI6ImZhMDMwNDRmLWE0MWEtNGJiMS1hMmEzLWI1MzY4ZjFjMmUzMSJ9.ScFGqnJJOuESwQbM48lu3hrSkQmRYrfL2EDobFFA39v1CpFtnSexl0tSqM3PWACGXNUDqSFszb2CwQtPY7CNMyDDXgFMj6QSCLn5w9lDZMV6dCaZ8Lap_m-v8pDCgFSsqhJU6Qtnch9KlSEBxS_wxoUmQLPiWrn1n_HS1nfsKMrCm5eSL0LDLZhyxogYoH2heIu7C9mCU5-1Ut-cONlYRwP5aLiI94FZxOXwNbxExpNrodqyzUNUa5Uoiqho5IhF1REVbi26ycqmCj6rbTVgkJDsQrG4GwfcWwZw3-gq26S-jbrYh8S7iFwFjJRxM5ugd53omvKyjp7hRv22qahoBw" 
+  #${{ secrets.JF_ENCRYPTED_PASSWORD }}
+  #JF_AUTH: ${{ secrets.JF_AUTH }}
+  #JF_PASSWORD: ${{ secrets.JF_PASSWORD }}
+  WEBAPP_FOLDER_NAME: "ATE-JAVA17-SPRING"
+  PROPERTY_FILE_NAME: "ATE-JAVA17-SPRING-US.properties"
+  RELEASE_VERSION: "v1.0.${{ github.run_number }}"
+  RELEASE_VERSION_WITH_BRANCH_PREFIX: "${{ github.ref_name }}-v1.0.${{ github.run_number }}"
+#   GIT_PAT: ${{ secrets.GIT_PAT }}
+  BRANCH_NAME: "${{ github.ref_name }}"
+#   SRM_PROJECT_ID: ${{ secrets.SRM_PROJECT_ID }}
+#   SRM_PROJECT_TOKEN: ${{ secrets.SRM_PROJECT_TOKEN }}
+
+jobs:
+  build-and-push:
+    runs-on: App-Factory-Win-2019
+    steps:
+      - name: Fetch code
+        uses: actions/checkout@v3
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+#       - name: Compress app.jar to zip
+#         run: Compress-Archive -Path app.jar -DestinationPath app.zip
+
+      - name: Push to Artifactory
+        run: |
+          . .\.github\build\common.ps1
+          pro_info "Packaging build output ($env:GITHUB_WORKSPACE\app.jar) into a zip file (package.zip)"
+          generate_package "$env:GITHUB_WORKSPACE\app.jar" "package.zip"
+
+          pro_info "Generating a $env:PROPERTY_FILE_NAME file"
+          generate_property
+          pro_info "Done Generating $env:PROPERTY_FILE_NAME file"
+
+          pro_info "Configure Artifactory for $env:JFROG_URL/$env:JF_BUILD_REPO Repo"
+          config_artifactory "--artifactory-url=$env:JFROG_URL" "$env:JF_USER" "$env:JF_USER_TOKEN"
+
+          publish_to_artifactory "package.zip" "$env:JF_BUILD_REPO/$env:RELEASE_VERSION_WITH_BRANCH_PREFIX/$env:WEBAPP_FOLDER_NAME/"
+          pro_info "Done Publishing package and property file to $env:JF_BUILD_REPO Repo"
+
+#   deploy-to-azure:
+#     needs: build-and-push
+#     runs-on: App-Factory-Win-2019
+#     steps:
+#       - name: Fetch package.zip from Artifactory
+#         run: |
+#           . .\.github\build\common.ps1
+#           jf c add --artifactory-url=https://artifactory.utc.com/artifactory --user $env:JF_USER --access-token $env:JF_USER_TOKEN
+
+#           pro_info "Getting package.zip for $env:RELEASE_VERSION_WITH_BRANCH_PREFIX"
+#           jf rt dl "$env:JF_BUILD_REPO/$env:RELEASE_VERSION_WITH_BRANCH_PREFIX/$env:WEBAPP_FOLDER_NAME/package.zip" --flat=true
+
+#       - name: Deploy to Azure
+#         uses: azure/webapps-deploy@v2
+#         with:
+#           app-name: ben-ora-java-client2
+#           slot-name: production
+#           publish-profile: '<publishData><publishProfile profileName="ben-java-ATE - Web Deploy" publishMethod="MSDeploy" publishUrl="ben-java-ate.scm.azurewebsites.us:443" msdeploySite="ben-java-ATE" userName="$ben-java-ATE" userPWD="QNrsatbJSEQc24ilSpkS1bNkZeHk9HxvQisNosT3nhoyZ3aJkdrevNrzQz56" destinationAppUrl="https://ben-java-ate.azurewebsites.us" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://manage.windowsazure.us" webSystem="WebSites"><databases /></publishProfile><publishProfile profileName="ben-java-ATE - FTP" publishMethod="FTP" publishUrl="ftp://gcws-prod-bn1-009.ftp.azurewebsites.usgovcloudapi.net/site/wwwroot" ftpPassiveMode="True" userName="REDACTED" userPWD="REDACTED" destinationAppUrl="https://ben-java-ate.azurewebsites.us" SQLServerDBConnectionString="REDACTED" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://manage.windowsazure.us" webSystem="WebSites"><databases /></publishProfile><publishProfile profileName="ben-java-ATE - Zip Deploy" publishMethod="ZipDeploy" publishUrl="ben-java-ate.scm.azurewebsites.us:443" userName="$ben-java-ATE" userPWD="QNrsatbJSEQc24ilSpkS1bNkZeHk9HxvQisNosT3nhoyZ3aJkdrevNrzQz56" destinationAppUrl="https://ben-java-ate.azurewebsites.us" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://manage.windowsazure.us" webSystem="WebSites"><databases /></publishProfile></publishData>'
+#           package: package.zip

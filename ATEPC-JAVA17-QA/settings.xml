@@ -1,0 +1,18 @@
+<settings>
+  <mirrors>
+    <!-- Redirect all requests for central to Artifactory -->
+    <mirror>
+      <id>internal-artifactory</id>
+      <mirrorOf>*</mirrorOf>
+      <url>https://artifactory.utc.com/artifactory/${env.ATE_JAVA17_JF_MAVEN_REPO}</url>
+    </mirror>
+  </mirrors>
+
+  <servers>
+    <server>
+      <id>internal-artifactory</id>
+      <username>${env.ATE_JAVA17_JF_USER}</username>
+      <password>${env.ATE_JAVA17_JF_USER_TOKEN}</password>
+    </server>
+  </servers>
+</settings>

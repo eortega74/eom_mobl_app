@@ -1,0 +1,23 @@
+################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+ 
+**/.vs
+**/bin
+**/obj
+/packages
+ 
+nuget.config
+app.zip
+app
+terraform/.terraform
+terraform/.terraform.lock.hcl
+terraform.zip
+terraform/provider.tf
+temp
+*PublishProfiles
+*launchSettings.json
+*dbmdl
+*.user
+/.github/config/secret.env
+/.github/config/publish-profile.xml
