@@ -19,32 +19,82 @@
     <description>EOM QA Simple Application for Azure</description>
 
     <properties>
-        <java.version>8</java.version>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring-boot.run.main-class>com.eom.demo.SimpleEomQaApplication</spring-boot.run.main-class>
+        <spring-boot.run.main-class>com.example.demo.DemoApplication</spring-boot.run.main-class>
+        <selenium.version>4.20.0</selenium.version>
+        <junit.version>5.9.2</junit.version>
     </properties>
 
     <dependencies>
-        <!-- Spring Boot Web Starter - ONLY essential dependency -->
+        <!-- Spring Boot Web Starter - Core web application framework -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        
+        <!-- Spring Boot Security - Authentication and authorization framework -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        
+        <!-- Spring Boot OAuth2 Client - OAuth2 authentication integration -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-client</artifactId>
+        </dependency>
+        
+        <!-- Spring Boot Actuator - Health checks and monitoring endpoints -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        
+        <!-- Selenium WebDriver - QA automation testing framework -->
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-java</artifactId>
+            <version>${selenium.version}</version>
+        </dependency>
+        
+        <!-- Selenium Remote Driver - Grid and remote execution support -->
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-remote-driver</artifactId>
+            <version>${selenium.version}</version>
+        </dependency>
+        
+        <!-- JUnit 5 - Modern unit testing framework -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        
+        <!-- Spring Boot Test Starter - Integration testing support -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <!-- Spring Boot Maven Plugin - Application packaging and execution -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.eom.demo.SimpleEomQaApplication</mainClass>
+                    <mainClass>com.example.demo.DemoApplication</mainClass>
                 </configuration>
             </plugin>
             
-            <!-- Azure App Service Maven Plugin -->
+            <!-- Azure App Service Maven Plugin - Cloud deployment automation -->
             <plugin>
                 <groupId>com.microsoft.azure</groupId>
                 <artifactId>azure-webapp-maven-plugin</artifactId>

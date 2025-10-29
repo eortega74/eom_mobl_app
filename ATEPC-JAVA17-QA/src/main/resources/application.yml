@@ -1,0 +1,88 @@
+# EOM QA Spring Boot Application Configuration
+server:
+  port: 8080
+
+spring:
+  application:
+    name: eom-qa-simple
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  security:
+    user:
+      name: user
+      password: eom-qa-2024
+
+# Spring Boot Actuator management endpoints configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  health:
+    defaults:
+      enabled: true
+
+# Application logging configuration
+logging:
+  level:
+    com.example.demo: INFO
+    org.springframework.security: DEBUG
+    org.selenium: INFO
+
+---
+# QA Environment Profile Configuration
+spring:
+  config:
+    activate:
+      on-profile: qa
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+
+# QA environment specific application settings
+app:
+  environment: qa
+  selenium:
+    hub:
+      url: http://${SELENIUM_HOST:localhost}:4444/wd/hub
+    timeout: 30
+    implicit:
+      wait: 10
+
+---
+# Development Environment Profile Configuration
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+# Development environment specific settings
+app:
+  environment: development
+  selenium:
+    hub:
+      url: http://localhost:4444/wd/hub
+
+logging:
+  level:
+    root: DEBUG
+
+---
+# Production Environment Profile Configuration
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+# Production environment specific settings
+app:
+  environment: production
+  selenium:
+    hub:
+      url: http://selenium:4444/wd/hub
+
+logging:
+  level:
+    root: WARN

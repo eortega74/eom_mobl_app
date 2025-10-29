@@ -1,37 +1,59 @@
 services:
+  # EOM QA Spring Boot Application Service
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    # network_mode: "host"
     ports:
       - "8080:8080"
-      - "5001:5001"
-      - "3000:3000"  # ✅ no space
     extra_hosts:
-      - "keycloak.local:host-gateway" #swap with whatever your local DNS mapping is, as long as it's not localhost
-      - "host.docker.internal:10.0.0.54"
-      - "gateway.docker.internal:10.0.0.54"
+      - "keycloak.local:host-gateway"
+      - "host.docker.internal:host-gateway"
     volumes:
-      - "./jar:/app/target"
-      - "./m2-cache:/root/.m2"
-      - "./reports:/app/reports" #mount to local directory to view result of testcases
+      - "./reports:/app/reports"  # Volume mount for Selenium test results
+      - "./m2-cache:/root/.m2"    # Maven dependencies cache volume
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://<INSERT_DNS_MAPPING>:3306/demo?createDatabaseIfNotExist=true
-      - SPRING_DATASOURCE_USERNAME=********* #replace
-      - SPRING DATASOURCE_PASSWORD=********* #replace
-      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MySQLDialect
+      - SPRING_PROFILES_ACTIVE=qa
       - SELENIUM_HOST=selenium
+      - SERVER_PORT=8080
+      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info
+    depends_on:
+      selenium:
+        condition: service_healthy
+    networks:
+      - eom-qa-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
-    # depends_on:
-    #   - selenium
+  # Selenium Grid Service for QA Automation Testing
   selenium:
     image: selenium/standalone-chrome:latest
     shm_size: 2g
     ports:
       - "4444:4444"
+      - "7900:7900"  # VNC port for visual debugging sessions
     extra_hosts:
-      - "keycloak.local:host-gateway" #swap with whatever your local DNS mapping is, as long as it's not localhost
+      - "keycloak.local:host-gateway"
+      - "host.docker.internal:host-gateway"
+    environment:
+      - SE_VNC_NO_PASSWORD=1
+      - SE_NODE_MAX_SESSIONS=2
+    networks:
+      - eom-qa-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+networks:
+  eom-qa-network:
+    driver: bridge
 
  
     
