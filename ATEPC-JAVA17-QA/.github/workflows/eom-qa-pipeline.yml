@@ -56,59 +56,59 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: 🔄 Checkout Source Code
+    - name: Checkout Source Code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
     
-    - name: ☕ Setup Java ${{ env.JAVA_VERSION }}
-      uses: actions/setup-java@v4
+    - name: Setup Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v3
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
         cache: maven
     
-    - name: 🧹 Clean and Validate Maven Configuration
+    - name: Clean and Validate Maven Configuration
       run: |
-        echo "🧹 Cleaning and validating Maven project configuration..."
+        echo "Cleaning and validating Maven project configuration..."
         mvn clean validate
     
-    - name: 🔨 Compile EOM QA Application
+    - name: Compile EOM QA Application
       run: |
-        echo "🔨 Compiling EOM QA Spring Boot application..."
+        echo "Compiling EOM QA Spring Boot application..."
         mvn compile
     
-    - name: 🧪 Execute Unit Tests
+    - name: Execute Unit Tests
       run: |
-        echo "🧪 Executing unit tests (excluding Selenium tests)..."
+        echo "Executing unit tests (excluding Selenium tests)..."
         mvn test -Dtest="!com.example.demo.Selenium" || true
         
-    - name: 📦 Build Application JAR Package
+    - name: Build Application JAR Package
       run: |
-        echo "📦 Building Spring Boot JAR package..."
+        echo "Building Spring Boot JAR package..."
         mvn package -DskipTests
         
         # Verify JAR artifact was created successfully
         if [ -f "target/eom-qa-simple-1.0.0-SNAPSHOT.jar" ]; then
-          echo "✅ JAR artifact created successfully"
+          echo "JAR artifact created successfully"
           ls -la target/*.jar
         else
-          echo "❌ JAR creation failed - artifact not found"
+          echo "JAR creation failed - artifact not found"
           ls -la target/
           exit 1
         fi
     
-    - name: 📊 Generate Build Summary Report
+    - name: Generate Build Summary Report
       run: |
-        echo "## 🏗️ Build Results Summary" > build-report.md
+        echo "## Build Results Summary" > build-report.md
         echo "- **Release Version**: ${{ env.RELEASE_VERSION }}" >> build-report.md
         echo "- **Java Version**: ${{ env.JAVA_VERSION }}" >> build-report.md
         echo "- **Source Branch**: ${{ env.BRANCH_NAME }}" >> build-report.md
         echo "- **JAR File Size**: $(du -h target/*.jar | cut -f1)" >> build-report.md
         echo "- **Build Timestamp**: $(date)" >> build-report.md
     
-    - name: 📤 Upload Build Artifacts
-      uses: actions/upload-artifact@v4
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v3
       with:
         name: eom-qa-build-${{ github.run_number }}
         path: |
@@ -130,25 +130,25 @@ jobs:
         options: --shm-size=2g
     
     steps:
-    - name: 🔄 Checkout Source Code
+    - name: Checkout Source Code
       uses: actions/checkout@v4
     
-    - name: ☕ Setup Java ${{ env.JAVA_VERSION }}
-      uses: actions/setup-java@v4
+    - name: Setup Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v3
       with:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
         cache: maven
     
-    - name: 📥 Download Application Build Artifacts
-      uses: actions/download-artifact@v4
+    - name: Download Application Build Artifacts
+      uses: actions/download-artifact@v3
       with:
         name: eom-qa-build-${{ github.run_number }}
         path: ./artifacts
     
-    - name: 🚀 Launch Application for QA Testing
+    - name: Launch Application for QA Testing
       run: |
-        echo "🚀 Starting EOM QA application instance for testing..."
+        echo "Starting EOM QA application instance for testing..."
         cp artifacts/*.jar ./eom-qa-app.jar
         
         # Launch application in background mode
@@ -158,13 +158,13 @@ jobs:
         echo $APP_PID > app.pid
         
         # Wait for application to become available
-        echo "⏳ Waiting for application to become ready..."
+        echo "Waiting for application to become ready..."
         for i in {1..30}; do
           if curl -f http://localhost:8080/actuator/health >/dev/null 2>&1; then
-            echo "✅ Application is ready and responding"
+            echo "Application is ready and responding"
             break
           elif [ $i -eq 30 ]; then
-            echo "❌ Application startup timeout - failed to start"
+            echo "Application startup timeout - failed to start"
             cat app.log
             exit 1
           else
@@ -173,13 +173,13 @@ jobs:
           fi
         done
     
-    - name: 🧪 Execute Selenium QA Test Suite
+    - name: Execute Selenium QA Test Suite
       env:
         SELENIUM_HOST: localhost
         TEST_SUITE: ${{ github.event.inputs.test_suite || 'selenium' }}
         BROWSER: ${{ github.event.inputs.browser || 'chrome' }}
       run: |
-        echo "🧪 Executing Selenium QA automation tests..."
+        echo "Executing Selenium QA automation tests..."
         echo "Target Test Suite: $TEST_SUITE"
         echo "Browser Configuration: $BROWSER"
         echo "Selenium Grid Hub: http://localhost:4444"
@@ -199,36 +199,36 @@ jobs:
         fi
         
         # Generate test execution summary
-        echo "## 🧪 Selenium Test Execution Results" > test-summary.md
+        echo "## Selenium Test Execution Results" > test-summary.md
         echo "- **Test Suite Executed**: $TEST_SUITE" >> test-summary.md
         echo "- **Browser Used**: $BROWSER" >> test-summary.md
         echo "- **Execution Timestamp**: $(date)" >> test-summary.md
         echo "- **Selenium Grid Hub**: http://localhost:4444" >> test-summary.md
         
         if [ -f "reports/testcases.txt" ]; then
-          echo "- **Execution Status**: ✅ Tests completed successfully" >> test-summary.md
+          echo "- **Execution Status**: Tests completed successfully" >> test-summary.md
           echo "" >> test-summary.md
           echo "### Test Execution Output:" >> test-summary.md
           echo '```' >> test-summary.md
           cat reports/testcases.txt >> test-summary.md
           echo '```' >> test-summary.md
         else
-          echo "- **Execution Status**: ⚠️ No test output generated" >> test-summary.md
+          echo "- **Execution Status**: No test output generated" >> test-summary.md
         fi
     
-    - name: 🛑 Shutdown Application Instance
+    - name: Shutdown Application Instance
       if: always()
       run: |
-        echo "🛑 Shutting down application instance..."
+        echo "Shutting down application instance..."
         if [ -f app.pid ]; then
           APP_PID=$(cat app.pid)
           kill $APP_PID 2>/dev/null || true
           echo "Application instance terminated successfully"
         fi
     
-    - name: 📤 Upload Test Results
+    - name: Upload Test Results
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: selenium-test-results-${{ github.run_number }}
         path: |
@@ -245,18 +245,18 @@ jobs:
     if: github.event.inputs.test_suite == 'all' || github.event.inputs.test_suite == 'integration'
     
     steps:
-    - name: 🔄 Checkout Code
+    - name: Checkout Code
       uses: actions/checkout@v4
     
-    - name: 📥 Download Build Artifacts
-      uses: actions/download-artifact@v4
+    - name: Download Build Artifacts
+      uses: actions/download-artifact@v3
       with:
         name: eom-qa-build-${{ github.run_number }}
         path: ./artifacts
     
-    - name: 🐳 Setup Docker Environment
+    - name: Setup Docker Environment
       run: |
-        echo "🐳 Setting up Docker environment..."
+        echo "Setting up Docker environment..."
         # Copy JAR to expected location
         mkdir -p jar
         cp artifacts/*.jar jar/
@@ -266,20 +266,20 @@ jobs:
           cp docker-compose.yaml docker-compose.yml
         fi
     
-    - name: 🚀 Start Docker Services
+    - name: Start Docker Services
       run: |
-        echo "🚀 Starting Docker services..."
+        echo "Starting Docker services..."
         # Update docker-compose to use local JAR
         docker-compose up -d selenium
         
         # Wait for Selenium to be ready
-        echo "⏳ Waiting for Selenium Grid..."
+        echo "Waiting for Selenium Grid..."
         for i in {1..30}; do
           if curl -f http://localhost:4444/wd/hub/status >/dev/null 2>&1; then
-            echo "✅ Selenium Grid is ready"
+            echo "Selenium Grid is ready"
             break
           elif [ $i -eq 30 ]; then
-            echo "❌ Selenium Grid failed to start"
+            echo "Selenium Grid failed to start"
             docker-compose logs selenium
             exit 1
           else
@@ -288,9 +288,9 @@ jobs:
           fi
         done
     
-    - name: 🧪 Run Integration Tests
+    - name: Run Integration Tests
       run: |
-        echo "🧪 Running Docker integration tests..."
+        echo "Running Docker integration tests..."
         
         # Create a simple integration test script
         cat > integration-test.sh << 'EOF'
@@ -305,21 +305,21 @@ jobs:
         echo "Test 2: Testing Selenium Grid sessions..."
         curl -s http://localhost:4444/wd/hub/sessions || echo "Sessions endpoint failed"
         
-        echo "✅ Integration tests completed"
+        echo "Integration tests completed"
         EOF
         
         chmod +x integration-test.sh
         ./integration-test.sh > integration-results.txt 2>&1
     
-    - name: 🛑 Cleanup Docker Services
+    - name: Cleanup Docker Services
       if: always()
       run: |
-        echo "🛑 Cleaning up Docker services..."
+        echo "Cleaning up Docker services..."
         docker-compose down || true
     
-    - name: 📤 Upload Integration Results
+    - name: Upload Integration Results
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: integration-test-results-${{ github.run_number }}
         path: |
@@ -337,48 +337,48 @@ jobs:
       BRANCH_NAME: "${{ github.ref_name }}"
       
     steps:
-    - name: 🔄 Checkout code
+    - name: Checkout code
       uses: actions/checkout@v3
         
-    - name: ☕ Setup Java 17
+    - name: Setup Java 17
       uses: actions/setup-java@v3
       with:
         distribution: 'temurin'
         java-version: '17'
     
-    - name: 📥 Download Application Build Artifacts
-      uses: actions/download-artifact@v4
+    - name: Download Application Build Artifacts
+      uses: actions/download-artifact@v3
       with:
         name: eom-qa-build-${{ github.run_number }}
         path: ./deployment
     
-    - name: 🔐 Get secrets from BeyondTrust
+    - name: Get secrets from BeyondTrust
       uses: rtx-actions/bt-vault-action@v1
       with:
         base-url: "https://pam.app.ray.com/BeyondTrust/api/public/v3/"
         auth-key: ${{ vars.BTSS_API_KEY}}
         run-as: ${{ vars.BTSS_RUNAS_USER}}
 
-    - name: 🏗️ Setup XetaDev MS Build
+    - name: Setup XetaDev MS Build
       uses: vendor-actions/setup-msbuild@v1.1
       with:
         vs-version: '[17,19.0)'
         vswhere-path: 'c:\apps\'
 
-    - name: 📝 Read publish profile
+    - name: Read publish profile
       run: |
         echo "Publish Profile: $env:EOM_QA_PUBLISH_PROFILE"
         echo "PUBLISH_PROFILE=$env:EOM_QA_PUBLISH_PROFILE" >> $env:GITHUB_ENV
     
-    - name: 🚀 Deploy to Azure Government Cloud
+    - name: Deploy to Azure Government Cloud
       uses: vendor-actions/azure-webapps-deploy@v2
       with:
         app-name: eom-qa-java-selenium  # EOM QA Java Selenium App Service
         publish-profile: ${{ env.PUBLISH_PROFILE }}
     
-    - name: 🔧 Configure Azure App Service Settings
+    - name: Configure Azure App Service Settings
       run: |
-        echo "🔧 Configuring Azure App Service application settings..."
+        echo "Configuring Azure App Service application settings..."
         
         # Configure Java runtime settings
         az webapp config set \
@@ -398,11 +398,11 @@ jobs:
             JAVA_OPTS="-Djava.security.egd=file:/dev/./urandom -Xmx1024m" \
             WEBSITE_TIME_ZONE="Eastern Standard Time"
         
-        echo "✅ Azure App Service configuration completed"
+        echo "Azure App Service configuration completed"
     
-    - name: � Generate Azure Deployment Report
+    - name: Generate Azure Deployment Report
       run: |
-        echo "📊 Generating Azure deployment report..."
+        echo "Generating Azure deployment report..."
         
         # Get deployment information
         WEBAPP_URL="https://${{ secrets.AZURE_APP_NAME }}.azurewebsites.us"
@@ -410,33 +410,33 @@ jobs:
         
         # Create comprehensive deployment report
         cat > azure-deployment-report.md << EOF
-        # 🚀 Azure Government Cloud Deployment Report
+        # Azure Government Cloud Deployment Report
         
-        ## 📋 Deployment Summary
+        ## Deployment Summary
         - **Environment**: ${{ env.ENVIRONMENT }}
         - **Version**: ${{ env.RELEASE_VERSION }}
         - **Deployment Time**: $DEPLOYMENT_TIME
         - **Azure Cloud**: Government (AzureUSGovernment)
-        - **Status**: ✅ SUCCESS
+        - **Status**: SUCCESS
         
-        ## 🌐 Application Details
+        ## Application Details
         - **Application URL**: [$WEBAPP_URL]($WEBAPP_URL)
         - **Health Endpoint**: [$WEBAPP_URL/actuator/health]($WEBAPP_URL/actuator/health)
         - **Resource Group**: ${{ secrets.AZURE_RESOURCE_GROUP }}
         - **App Service Name**: ${{ secrets.AZURE_APP_NAME }}
         
-        ## ⚙️ Runtime Configuration
+        ## Runtime Configuration
         - **Java Version**: 17
         - **Spring Profile**: prod
         - **Container**: Java SE
         - **Memory**: 1024MB
         
-        ## 📦 Artifact Information
+        ## Artifact Information
         - **Build Number**: ${{ github.run_number }}
         - **Source Branch**: ${{ env.BRANCH_NAME }}
         - **JAR Size**: $(du -h deployment/*.jar | cut -f1)
         
-        ## 🔍 Post-Deployment Validation
+        ## Post-Deployment Validation
         - **Health Check**: Completed
         - **Application Startup**: Verified
         - **Endpoint Accessibility**: Confirmed
@@ -445,10 +445,10 @@ jobs:
         *Generated automatically by EOM QA Pipeline*
         EOF
         
-        echo "✅ Azure deployment report generated"
+        echo "Azure deployment report generated"
     
-    - name: 📤 Upload Azure Deployment Artifacts
-      uses: actions/upload-artifact@v4
+    - name: Upload Azure Deployment Artifacts
+      uses: actions/upload-artifact@v3
       with:
         name: azure-deployment-report-${{ github.run_number }}
         path: azure-deployment-report.md
@@ -461,17 +461,17 @@ jobs:
     if: always()
     
     steps:
-    - name: 📊 Generate Pipeline Summary
+    - name: Generate Pipeline Summary
       run: |
-        echo "# 🎯 EOM QA Pipeline Summary" > pipeline-summary.md
+        echo "# EOM QA Pipeline Summary" > pipeline-summary.md
         echo "" >> pipeline-summary.md
-        echo "## 📊 Job Results" >> pipeline-summary.md
+        echo "## Job Results" >> pipeline-summary.md
         echo "- **Build & Test**: ${{ needs.build-and-test.result }}" >> pipeline-summary.md
         echo "- **Selenium QA**: ${{ needs.selenium-qa-tests.result }}" >> pipeline-summary.md
         echo "- **Integration Tests**: ${{ needs.docker-integration-test.result }}" >> pipeline-summary.md
         echo "- **Deploy**: ${{ needs.deploy-to-azure.result }}" >> pipeline-summary.md
         echo "" >> pipeline-summary.md
-        echo "## 📦 Build Information" >> pipeline-summary.md
+        echo "## Build Information" >> pipeline-summary.md
         echo "- **Version**: ${{ env.RELEASE_VERSION }}" >> pipeline-summary.md
         echo "- **Branch**: ${{ env.BRANCH_NAME }}" >> pipeline-summary.md
         echo "- **Environment**: ${{ env.ENVIRONMENT }}" >> pipeline-summary.md
@@ -481,10 +481,10 @@ jobs:
         
         # Overall status
         if [ "${{ needs.build-and-test.result }}" = "success" ] && [ "${{ needs.selenium-qa-tests.result }}" = "success" ]; then
-          echo "## ✅ Pipeline Status: SUCCESS" >> pipeline-summary.md
+          echo "## Pipeline Status: SUCCESS" >> pipeline-summary.md
           echo "All tests passed! EOM QA is ready for deployment." >> pipeline-summary.md
         else
-          echo "## ❌ Pipeline Status: FAILED" >> pipeline-summary.md
+          echo "## Pipeline Status: FAILED" >> pipeline-summary.md
           echo "Check individual job logs for failure details." >> pipeline-summary.md
         fi
         
@@ -492,8 +492,8 @@ jobs:
         echo "---" >> pipeline-summary.md
         echo "*Generated on $(date)*" >> pipeline-summary.md
     
-    - name: 📤 Upload Pipeline Summary
-      uses: actions/upload-artifact@v4
+    - name: Upload Pipeline Summary
+      uses: actions/upload-artifact@v3
       with:
         name: pipeline-summary-${{ github.run_number }}
         path: pipeline-summary.md
