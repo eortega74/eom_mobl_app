@@ -67,27 +67,149 @@ jobs:
         java-version: ${{ env.JAVA_VERSION }}
         distribution: 'temurin'
         cache: maven
+        settings-path: ${{ github.workspace }}
+    
+    - name: Configure Maven Settings
+      env:
+        ATE_JAVA17_JF_MAVEN_REPO: ${{ secrets.ATE_JAVA17_JF_MAVEN_REPO || 'maven-public' }}
+        ATE_JAVA17_JF_USER: ${{ secrets.ATE_JAVA17_JF_USER }}
+        ATE_JAVA17_JF_USER_TOKEN: ${{ secrets.ATE_JAVA17_JF_USER_TOKEN }}
+      run: |
+        Write-Host "Configuring Maven with corporate settings..."
+        
+        # Create .m2 directory if it doesn't exist
+        New-Item -ItemType Directory -Force -Path ~/.m2
+        
+        if (Test-Path "settings.xml") {
+          Write-Host "Using existing settings.xml with Artifactory configuration"
+          Copy-Item settings.xml ~/.m2/settings.xml -Force
+          
+          # Test Artifactory connectivity
+          Write-Host "Testing Artifactory connectivity..."
+          try {
+            $artifactoryUrl = "https://artifactory.utc.com/artifactory/$env:ATE_JAVA17_JF_MAVEN_REPO"
+            Write-Host "Checking: $artifactoryUrl"
+            Invoke-WebRequest -Uri $artifactoryUrl -Method HEAD -TimeoutSec 10
+            Write-Host "Artifactory connection successful"
+          } catch {
+            Write-Host "Warning: Cannot reach Artifactory, will try backup configuration"
+            Write-Host "Error: $_"
+          }
+        } else {
+          Write-Host "No settings.xml found, creating minimal configuration"
+        }
+        
+        # Set Maven options for corporate environment
+        $env:MAVEN_OPTS = "$env:MAVEN_OPTS -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true"
+        Write-Host "MAVEN_OPTS configured: $env:MAVEN_OPTS"
     
     - name: Clean and Validate Maven Configuration
+      env:
+        ATE_JAVA17_JF_MAVEN_REPO: ${{ secrets.ATE_JAVA17_JF_MAVEN_REPO || 'maven-public' }}
+        ATE_JAVA17_JF_USER: ${{ secrets.ATE_JAVA17_JF_USER }}
+        ATE_JAVA17_JF_USER_TOKEN: ${{ secrets.ATE_JAVA17_JF_USER_TOKEN }}
+        MAVEN_OPTS: "-Xmx1024m -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true"
       run: |
         Write-Host "Cleaning and validating Maven project configuration..."
-        mvn clean validate
+        
+        # Create offline-first settings using local cache
+        Write-Host "Creating offline-first Maven configuration with local cache..."
+        $offlineSettings = @"
+        <settings>
+          <localRepository>${{ github.workspace }}/m2-cache/repository</localRepository>
+          <offline>false</offline>
+          <mirrors>
+            <mirror>
+              <id>local-cache</id>
+              <mirrorOf>*</mirrorOf>
+              <url>file://${{ github.workspace }}/m2-cache/repository</url>
+            </mirror>
+          </mirrors>
+        </settings>
+        "@
+        $offlineSettings | Out-File -FilePath "offline-settings.xml" -Encoding utf8
+        
+        Write-Host "Attempting with offline-first local cache..."
+        mvn clean validate --settings offline-settings.xml -o
+        
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host "Offline mode failed, trying with local cache but online mode..."
+          mvn clean validate --settings offline-settings.xml
+        }
+        
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host "Local cache failed, trying with existing settings.xml..."
+          if (Test-Path "settings.xml") {
+            mvn clean validate --settings settings.xml
+          }
+        }
     
     - name: Compile EOM QA Application
+      env:
+        ATE_JAVA17_JF_MAVEN_REPO: ${{ secrets.ATE_JAVA17_JF_MAVEN_REPO || 'maven-public' }}
+        ATE_JAVA17_JF_USER: ${{ secrets.ATE_JAVA17_JF_USER }}
+        ATE_JAVA17_JF_USER_TOKEN: ${{ secrets.ATE_JAVA17_JF_USER_TOKEN }}
+        MAVEN_OPTS: "-Xmx1024m -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true"
       run: |
         Write-Host "Compiling EOM QA Spring Boot application..."
-        mvn compile
+        
+        # Try with offline-first local cache
+        if (Test-Path "offline-settings.xml") {
+          Write-Host "Using offline-first local cache..."
+          mvn compile --settings offline-settings.xml -o
+          
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Offline compilation failed, trying online with local cache..."
+            mvn compile --settings offline-settings.xml
+          }
+        } else {
+          Write-Host "Using default Maven configuration..."
+          mvn compile
+        }
     
     - name: Execute Unit Tests
+      env:
+        ATE_JAVA17_JF_MAVEN_REPO: ${{ secrets.ATE_JAVA17_JF_MAVEN_REPO || 'maven-public' }}
+        ATE_JAVA17_JF_USER: ${{ secrets.ATE_JAVA17_JF_USER }}
+        ATE_JAVA17_JF_USER_TOKEN: ${{ secrets.ATE_JAVA17_JF_USER_TOKEN }}
+        MAVEN_OPTS: "-Xmx1024m -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true"
       run: |
         Write-Host "Executing unit tests (excluding Selenium tests)..."
-        mvn test -Dtest="!com.example.demo.Selenium"
+        
+        # Try with offline-first local cache
+        if (Test-Path "offline-settings.xml") {
+          mvn test -Dtest="!com.example.demo.Selenium" --settings offline-settings.xml -o
+          
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Offline tests failed, trying online with local cache..."
+            mvn test -Dtest="!com.example.demo.Selenium" --settings offline-settings.xml
+          }
+        } else {
+          mvn test -Dtest="!com.example.demo.Selenium"
+        }
         if ($LASTEXITCODE -ne 0) { Write-Host "Tests failed but continuing..." }
         
     - name: Build Application JAR Package
+      env:
+        ATE_JAVA17_JF_MAVEN_REPO: ${{ secrets.ATE_JAVA17_JF_MAVEN_REPO || 'maven-public' }}
+        ATE_JAVA17_JF_USER: ${{ secrets.ATE_JAVA17_JF_USER }}
+        ATE_JAVA17_JF_USER_TOKEN: ${{ secrets.ATE_JAVA17_JF_USER_TOKEN }}
+        MAVEN_OPTS: "-Xmx1024m -Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true"
       run: |
         Write-Host "Building Spring Boot JAR package..."
-        mvn package -DskipTests
+        
+        # Try with offline-first local cache
+        if (Test-Path "offline-settings.xml") {
+          Write-Host "Building with offline-first local cache..."
+          mvn package -DskipTests --settings offline-settings.xml -o
+          
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Offline build failed, trying online with local cache..."
+            mvn package -DskipTests --settings offline-settings.xml
+          }
+        } else {
+          mvn package -DskipTests
+        }
         
         # Verify JAR artifact was created successfully
         if (Test-Path "target/eom-qa-simple-1.0.0-SNAPSHOT.jar") {
