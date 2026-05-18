@@ -1,4 +1,4 @@
-# Jira JQL Extractor (Python + Docker)
+# Jira JQL Extractor (py + Docker)
 
 This project exports Jira issues using the Jira REST API and a configurable JQL query.
 
@@ -71,7 +71,7 @@ CSV-specific settings:
 - `output.csv.sprint_field`: Jira field id used for sprint (often custom)
 - `output.csv.custom_fields`: map of CSV column name to Jira field id
 
-## Run Locally (Python)
+## Run Locally (py launcher)
 
 Set your PAT in an environment variable (recommended):
 
@@ -81,26 +81,26 @@ $env:JIRA_PAT_TOKEN = "tu_pat_real"
 
 ```powershell
 cd jira_jql_extractor
-pip install -r requirements.txt
-python app.py --config config.yaml
+py -m pip install -r requirements.txt
+py app.py --config config.yaml
 ```
 
 Verbose run (page-by-page progress and retries):
 
 ```powershell
-python app.py --config config.yaml --verbose
+py app.py --config config.yaml --verbose
 ```
 
 Verbose log file (writes logs even without console verbose):
 
 ```powershell
-python app.py --config config.yaml --verbose-log-file
+py app.py --config config.yaml --verbose-log-file
 ```
 
 Custom verbose log file path:
 
 ```powershell
-python app.py --config config.yaml --verbose --verbose-log-file output/my_run.log
+py app.py --config config.yaml --verbose --verbose-log-file output/my_run.log
 ```
 
 ## Run with Docker Compose
@@ -126,7 +126,7 @@ Quick PAT creation guide (service account user/password):
 List all Jira fields:
 
 ```powershell
-python app.py --config config.yaml --list-fields
+py app.py --config config.yaml --list-fields
 ```
 
 Output format:
@@ -141,13 +141,13 @@ customfield_10020,Sprint,true
 Generate a CSV template with suggested field mappings:
 
 ```powershell
-python app.py --config config.yaml --generate-csv-template
+py app.py --config config.yaml --generate-csv-template
 ```
 
 Custom output path for template:
 
 ```powershell
-python app.py --config config.yaml --generate-csv-template output/my_template.yaml
+py app.py --config config.yaml --generate-csv-template output/my_template.yaml
 ```
 
 The generated template includes recommended values for:

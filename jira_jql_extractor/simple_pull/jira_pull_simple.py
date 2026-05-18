@@ -17,8 +17,15 @@ def main() -> int:
         base_url = required_env("JIRA_BASE_URL").rstrip("/")
         token = required_env("JIRA_PAT_TOKEN")
         jql = os.environ.get("JIRA_JQL", "project = ABC ORDER BY created DESC").strip()
+        api_path = os.environ.get("JIRA_API_PATH", "/rest/api/2/search").strip() or "/rest/api/2/search"
+        timeout_seconds = int(os.environ.get("JIRA_TIMEOUT_SECONDS", "30"))
+        verify_ssl_env = os.environ.get("JIRA_VERIFY_SSL", "true").strip().lower()
+        verify_ssl = verify_ssl_env not in {"0", "false", "no", "off"}
 
-        url = f"{base_url}/rest/api/2/search"
+        if not api_path.startswith("/"):
+            api_path = f"/{api_path}"
+
+        url = f"{base_url}{api_path}"
         headers = {
             "Authorization": f"Bearer {token}",
             "Accept": "application/json",
@@ -29,7 +36,13 @@ def main() -> int:
             "fields": "key,summary,status,assignee,created,updated",
         }
 
-        response = requests.get(url, headers=headers, params=params, timeout=30)
+        response = requests.get(
+            url,
+            headers=headers,
+            params=params,
+            timeout=timeout_seconds,
+            verify=verify_ssl,
+        )
         response.raise_for_status()
         data = response.json()
 
@@ -52,6 +65,18 @@ def main() -> int:
         if exc.response is not None:
             print(f"Status: {exc.response.status_code}", file=sys.stderr)
             print(f"Body: {exc.response.text}", file=sys.stderr)
+        return 1
+    except requests.RequestException as exc:
+        print(f"Request error type: {exc.__class__.__name__}", file=sys.stderr)
+        print(f"Request error: {exc}", file=sys.stderr)
+        print(f"Request error repr: {repr(exc)}", file=sys.stderr)
+        if getattr(exc, "response", None) is not None:
+            print(f"Status: {exc.response.status_code}", file=sys.stderr)
+            print(f"Body: {exc.response.text}", file=sys.stderr)
+        print(
+            "Hint: try API v3 (-ApiPath /rest/api/3/search) or disable SSL verify temporarily (-SkipSslVerify) in corporate networks.",
+            file=sys.stderr,
+        )
         return 1
     except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)

@@ -68,11 +68,11 @@ jira:
 docker compose up --build
 ```
 
-### Opcion B: Python local
+### Opcion B: ejecucion local con py
 
 ```powershell
-pip install -r requirements.txt
-python app.py --config config.yaml
+py -m pip install -r requirements.txt
+py app.py --config config.yaml
 ```
 
 ## 5) Salidas

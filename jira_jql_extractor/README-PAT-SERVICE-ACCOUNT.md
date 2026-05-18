@@ -94,7 +94,7 @@ JIRA_PAT_TOKEN=TU_PAT_GENERADO
 3. Ejecutar el extractor:
 
 ```powershell
-python app.py --config config.yaml
+py app.py --config config.yaml
 ```
 
 ## Prueba rapida del PAT
