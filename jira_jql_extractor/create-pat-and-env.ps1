@@ -20,6 +20,93 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Get-HttpErrorDetails {
+    param(
+        [Parameter(Mandatory = $true)]
+        $Exception
+    )
+
+    $statusCode = "unknown"
+    $responseBody = ""
+
+    if ($Exception.Response -and $Exception.Response.StatusCode) {
+        $statusCode = [int]$Exception.Response.StatusCode
+    }
+
+    try {
+        if ($Exception.Response -and $Exception.Response.GetResponseStream) {
+            $stream = $Exception.Response.GetResponseStream()
+            if ($stream) {
+                $reader = New-Object System.IO.StreamReader($stream)
+                $responseBody = $reader.ReadToEnd()
+                $reader.Close()
+            }
+        }
+    } catch {
+    }
+
+    return [PSCustomObject]@{
+        StatusCode = $statusCode
+        Body = $responseBody
+    }
+}
+
+function New-PatWithBasicAuth {
+    param(
+        [string]$Uri,
+        [hashtable]$Headers,
+        [string]$Body
+    )
+
+    return Invoke-RestMethod -Method Post -Uri $Uri -Headers $Headers -Body $Body
+}
+
+function New-PatWithSessionAuth {
+    param(
+        [string]$BaseUrl,
+        [string]$Uri,
+        [string]$ServiceAccountUser,
+        [string]$PlainPassword,
+        [string]$Body
+    )
+
+    $loginEndpoints = @(
+        "$BaseUrl/rest/auth/1/session",
+        "$BaseUrl/rest/auth/latest/session"
+    )
+
+    $authPayload = @{ username = $ServiceAccountUser; password = $PlainPassword } | ConvertTo-Json
+    $lastAuthError = $null
+
+    foreach ($loginUri in $loginEndpoints) {
+        try {
+            Write-Host "Intentando login de sesion en: $loginUri" -ForegroundColor Yellow
+            $null = Invoke-RestMethod `
+                -Method Post `
+                -Uri $loginUri `
+                -ContentType "application/json" `
+                -Body $authPayload `
+                -SessionVariable jiraSession
+
+            $sessionHeaders = @{
+                "Content-Type" = "application/json"
+                "Accept" = "application/json"
+                "X-Atlassian-Token" = "no-check"
+            }
+
+            return Invoke-RestMethod -Method Post -Uri $Uri -Headers $sessionHeaders -Body $Body -WebSession $jiraSession
+        } catch {
+            $lastAuthError = $_
+        }
+    }
+
+    if ($null -ne $lastAuthError) {
+        throw $lastAuthError
+    }
+
+    throw "No fue posible autenticarse por sesion para crear el PAT."
+}
+
 function Read-RequiredValue {
     param(
         [string]$Prompt
@@ -63,6 +150,7 @@ $basic = [Convert]::ToBase64String($bytes)
 $headers = @{
     Authorization = "Basic $basic"
     "Content-Type" = "application/json"
+    "Accept" = "application/json"
 }
 
 $bodyObject = @{
@@ -74,7 +162,46 @@ $body = $bodyObject | ConvertTo-Json -Depth 5
 $uri = "$BaseUrl/rest/pat/latest/tokens"
 Write-Host "Creando PAT en: $uri" -ForegroundColor Cyan
 
-$response = Invoke-RestMethod -Method Post -Uri $uri -Headers $headers -Body $body
+$response = $null
+try {
+    $response = New-PatWithBasicAuth -Uri $uri -Headers $headers -Body $body
+} catch {
+    $details = Get-HttpErrorDetails -Exception $_.Exception
+    $statusCode = $details.StatusCode
+
+    if ($statusCode -in @(401, 403)) {
+        Write-Host "Basic auth devolvio $statusCode. Intentando fallback por sesion..." -ForegroundColor Yellow
+        try {
+            $response = New-PatWithSessionAuth `
+                -BaseUrl $BaseUrl `
+                -Uri $uri `
+                -ServiceAccountUser $ServiceAccountUser `
+                -PlainPassword $plainPassword `
+                -Body $body
+        } catch {
+            $sessionDetails = Get-HttpErrorDetails -Exception $_.Exception
+            $msg = @(
+                "No se pudo crear el PAT (fallback de sesion tambien fallo).",
+                "Status basic: $statusCode",
+                "Status session: $($sessionDetails.StatusCode)",
+                "Sugerencias:",
+                "- Verifica formato de usuario: DOMAIN\\usuario o usuario@dominio.",
+                "- Confirma que el usuario puede crear PAT en Jira.",
+                "- Confirma que el endpoint PAT este habilitado en la instancia.",
+                "- Revisa si SSO/politicas bloquean autenticacion por password.",
+                "Body session: $($sessionDetails.Body)"
+            ) -join [Environment]::NewLine
+            throw $msg
+        }
+    } else {
+        $msg = @(
+            "No se pudo crear el PAT.",
+            "Status: $statusCode",
+            "Body: $($details.Body)"
+        ) -join [Environment]::NewLine
+        throw $msg
+    }
+}
 
 $pat = ""
 if ($response -is [string]) {

@@ -91,3 +91,18 @@ Invoke-RestMethod -Method Get -Uri "$BASE_URL/rest/api/2/myself" -Headers @{ Aut
 ```
 
 Si responde datos del usuario, el PAT funciona.
+
+## Si aparece 401 Unauthorized
+
+Prueba estas variantes del usuario:
+- `DOMAIN\\usuario` (ejemplo: `adxrt.com\\svc003736`)
+- `usuario@dominio` (ejemplo: `svc003736@adxrt.com`)
+
+Verifica tambien:
+- Que el usuario tenga permiso para crear PAT
+- Que la instancia tenga habilitado `/rest/pat/latest/tokens`
+- Que no exista una politica SSO que bloquee auth por password para este endpoint
+
+El script `create-pat-and-env.ps1` ya intenta:
+1. Crear PAT con Basic auth
+2. Si falla 401/403, reintenta con login de sesion en Jira y luego crea el PAT
