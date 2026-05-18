@@ -3,6 +3,7 @@ import os
 import sys
 
 import requests
+import urllib3
 
 
 def required_env(name: str) -> str:
@@ -21,6 +22,9 @@ def main() -> int:
         timeout_seconds = int(os.environ.get("JIRA_TIMEOUT_SECONDS", "30"))
         verify_ssl_env = os.environ.get("JIRA_VERIFY_SSL", "true").strip().lower()
         verify_ssl = verify_ssl_env not in {"0", "false", "no", "off"}
+
+        if not verify_ssl:
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         if not api_path.startswith("/"):
             api_path = f"/{api_path}"
@@ -44,7 +48,29 @@ def main() -> int:
             verify=verify_ssl,
         )
         response.raise_for_status()
-        data = response.json()
+
+        content_type = (response.headers.get("Content-Type") or "").lower()
+        if "application/json" not in content_type:
+            preview = (response.text or "")[:500]
+            print("Unexpected response format from Jira (expected JSON).", file=sys.stderr)
+            print(f"Status: {response.status_code}", file=sys.stderr)
+            print(f"Content-Type: {response.headers.get('Content-Type', '')}", file=sys.stderr)
+            print(f"Body preview: {preview}", file=sys.stderr)
+            print(
+                "Hint: this is commonly an SSO/login HTML page. Verify PAT validity and endpoint access.",
+                file=sys.stderr,
+            )
+            return 1
+
+        try:
+            data = response.json()
+        except ValueError as exc:
+            preview = (response.text or "")[:500]
+            print(f"JSON parse error: {exc}", file=sys.stderr)
+            print(f"Status: {response.status_code}", file=sys.stderr)
+            print(f"Content-Type: {response.headers.get('Content-Type', '')}", file=sys.stderr)
+            print(f"Body preview: {preview}", file=sys.stderr)
+            return 1
 
         issues = data.get("issues", [])
         print(f"Issues fetched: {len(issues)}")
