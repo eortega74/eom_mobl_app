@@ -53,6 +53,12 @@ if (Get-Command Invoke-WebRequest -ErrorAction SilentlyContinue) {
     $supportsSkipCertificateCheck = $cmd.Parameters.ContainsKey("SkipCertificateCheck")
 }
 
+# Defensive reset: remove any stale scriptblock callback left in the session.
+$oldCertCallback = [System.Net.ServicePointManager]::ServerCertificateValidationCallback
+if ($null -ne $oldCertCallback) {
+    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = $null
+}
+
 $oldCertPolicy = $null
 if ($SkipSslVerify) {
     if ($supportsSkipCertificateCheck) {
@@ -166,6 +172,9 @@ try {
     }
 }
 finally {
+    if ($null -ne $oldCertCallback) {
+        [System.Net.ServicePointManager]::ServerCertificateValidationCallback = $oldCertCallback
+    }
     if ($SkipSslVerify -and (-not $supportsSkipCertificateCheck) -and ($null -ne $oldCertPolicy)) {
         [System.Net.ServicePointManager]::CertificatePolicy = $oldCertPolicy
     }
