@@ -9,7 +9,7 @@ param(
     [string]$OutputFile = "jira_issues.json",
 
     [Parameter(Mandatory = $false)]
-    [string]$ApiPath = "/rest/api/2/search",
+    [string]$ApiPath = "/rest/api/latest/search",
 
     [Parameter(Mandatory = $false)]
     [int]$TimeoutSeconds = 30,

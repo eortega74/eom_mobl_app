@@ -18,7 +18,7 @@ def main() -> int:
         base_url = required_env("JIRA_BASE_URL").rstrip("/")
         token = required_env("JIRA_PAT_TOKEN")
         jql = os.environ.get("JIRA_JQL", "project = ABC ORDER BY created DESC").strip()
-        api_path = os.environ.get("JIRA_API_PATH", "/rest/api/2/search").strip() or "/rest/api/2/search"
+        api_path = os.environ.get("JIRA_API_PATH", "/rest/api/latest/search").strip() or "/rest/api/latest/search"
         timeout_seconds = int(os.environ.get("JIRA_TIMEOUT_SECONDS", "30"))
         verify_ssl_env = os.environ.get("JIRA_VERIFY_SSL", "true").strip().lower()
         verify_ssl = verify_ssl_env not in {"0", "false", "no", "off"}

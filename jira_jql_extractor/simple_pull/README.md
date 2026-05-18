@@ -30,15 +30,22 @@ py .\jira_pull_simple.py
 
 ## Notas
 
-- Si tu Jira usa API v3, puedes cambiar el endpoint en `jira_pull_simple.py` de `/rest/api/2/search` a `/rest/api/3/search`.
+- Para Jira Server/Data Center, usa `/rest/api/latest/search` (default) o `/rest/api/2/search`.
+- Si tu entorno expone API v3, puedes usar `/rest/api/3/search`.
 - Si recibes 401/403, revisa permisos del PAT y politica SSO de la instancia.
 
 ## Troubleshooting rapido
 
-Si ves `Max retries exceeded`, prueba primero con API v3:
+Si ves `Max retries exceeded`, prueba primero con latest:
 
 ```powershell
-.\run-simple-pull.ps1 -BaseUrl "https://jira.tuempresa.com" -ApiPath "/rest/api/3/search" -Jql "project = ABC ORDER BY created DESC"
+.\run-simple-pull.ps1 -BaseUrl "https://jira.tuempresa.com" -ApiPath "/rest/api/latest/search" -Jql "project = ABC ORDER BY created DESC"
+```
+
+Si no funciona, prueba API v2 o v3 segun tu instancia:
+
+```powershell
+.\run-simple-pull.ps1 -BaseUrl "https://jira.tuempresa.com" -ApiPath "/rest/api/2/search" -Jql "project = ABC ORDER BY created DESC"
 ```
 
 Si estas en red corporativa con SSL inspeccionado, prueba temporalmente sin validacion SSL:
