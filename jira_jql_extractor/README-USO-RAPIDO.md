@@ -36,6 +36,20 @@ Alternativa de usuario (UPN), si tu dominio lo requiere:
 .\create-pat-and-env.ps1 -BaseUrl "<JIRA_URL>" -ServiceAccountUser "<SERVICE_ACCOUNT_USER_UPN>" -Force
 ```
 
+## 2.1) Si solo deseas usar un PAT ya creado
+
+Sin generar PAT por API, carga tu token existente en `.env`:
+
+```powershell
+.\set-env-from-existing-pat.ps1 -Force
+```
+
+Luego ejecuta el extractor:
+
+```powershell
+docker compose up --build
+```
+
 ## 3) Validar configuracion
 
 Asegurate de que `config.yaml` tenga:
@@ -73,6 +87,18 @@ Por defecto se generan archivos en la carpeta `output/` (segun `config.yaml`):
   - Verifica user/password del service account
   - Verifica que el usuario tenga permisos en Jira
   - Regenera PAT con `-Force`
+  - Si el error muestra `WWW-Authenticate: OAuth realm=...`, tu instancia probablemente bloquea auth por password para API.
+  - En ese caso usa PAT manual + script de carga en `.env`:
+
+```powershell
+.\set-env-from-existing-pat.ps1 -Force
+```
+
+  - Luego ejecuta:
+
+```powershell
+docker compose up --build
+```
 
 - Error indicando PAT no encontrado:
   - Verifica que exista `.env`

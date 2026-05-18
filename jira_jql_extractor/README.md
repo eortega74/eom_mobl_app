@@ -11,6 +11,28 @@ It supports:
 - Metadata includes execution time and issue date ranges
 - Metadata includes pagination and retry/network stats
 
+## Quick Start
+
+Fastest path when you already have a PAT:
+
+```powershell
+cd jira_jql_extractor
+.\set-env-from-existing-pat.ps1 -Force
+docker compose up --build
+```
+
+Alternative path to create PAT automatically with service account user/password:
+
+```powershell
+cd jira_jql_extractor
+.\create-pat-and-env.ps1 -BaseUrl "<JIRA_URL>" -ServiceAccountUser "<SERVICE_ACCOUNT_USER>" -Force
+docker compose up --build
+```
+
+More details:
+- `README-USO-RAPIDO.md`
+- `README-PAT-SERVICE-ACCOUNT.md`
+
 ## How It Works
 
 1. The script reads `config.yaml`.

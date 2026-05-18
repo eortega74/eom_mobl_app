@@ -191,6 +191,19 @@ try {
                 -Body $body
         } catch {
             $sessionDetails = Get-HttpErrorDetails -Exception $_.Exception
+            $basicWwwAuth = [string]$details.Headers['WWW-Authenticate']
+            $basicSeraphReason = [string]$details.Headers['X-Seraph-LoginReason']
+            $sessionSeraphReason = [string]$sessionDetails.Headers['X-Seraph-LoginReason']
+            $oauthRealmDetected = $basicWwwAuth -match "OAuth realm="
+            $authFailedDetected = ($basicSeraphReason -eq "AUTHENTICATED_FAILED") -or ($sessionSeraphReason -eq "AUTHENTICATED_FAILED")
+
+            $diagnosticHint = ""
+            if ($oauthRealmDetected) {
+                $diagnosticHint = "Diagnostico: Jira esta desafiando con OAuth. La autenticacion por user/password para este flujo API parece bloqueada por politica/SSO."
+            } elseif ($authFailedDetected) {
+                $diagnosticHint = "Diagnostico: Jira marco AUTHENTICATED_FAILED. Credenciales invalidas o login por password bloqueado para API."
+            }
+
             $msg = @(
                 "No se pudo crear el PAT (fallback de sesion tambien fallo).",
                 "Status basic: $statusCode",
@@ -199,11 +212,13 @@ try {
                 "Header session X-Seraph-LoginReason: $($sessionDetails.Headers['X-Seraph-LoginReason'])",
                 "Header basic WWW-Authenticate: $($details.Headers['WWW-Authenticate'])",
                 "Header session WWW-Authenticate: $($sessionDetails.Headers['WWW-Authenticate'])",
+                $diagnosticHint,
                 "Sugerencias:",
                 "- Verifica formato de usuario: DOMAIN\\usuario o usuario@dominio.",
                 "- Confirma que el usuario puede crear PAT en Jira.",
                 "- Confirma que el endpoint PAT este habilitado en la instancia.",
                 "- Revisa si SSO/politicas bloquean autenticacion por password.",
+                "- Plan B: crea PAT manualmente via UI y cargalo en .env.",
                 "Body session: $($sessionDetails.Body)"
             ) -join [Environment]::NewLine
             throw $msg

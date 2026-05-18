@@ -27,6 +27,22 @@ Opcionales:
 - `-ExpirationDays 90`
 - `-EnvPath ".env"`
 
+## Opcion directa: usar PAT ya creado
+
+Si ya tienes un PAT (creado en Jira UI u otro flujo), no necesitas generar uno nuevo por API.
+
+1. Cargalo en `.env`:
+
+```powershell
+.\set-env-from-existing-pat.ps1 -Force
+```
+
+2. Ejecuta el extractor:
+
+```powershell
+docker compose up --build
+```
+
 ## Requisitos
 
 - URL base de Jira (Server/Data Center), por ejemplo: `https://jira.tuempresa.com`
@@ -106,3 +122,18 @@ Verifica tambien:
 El script `create-pat-and-env.ps1` ya intenta:
 1. Crear PAT con Basic auth
 2. Si falla 401/403, reintenta con login de sesion en Jira y luego crea el PAT
+
+Si aun falla y ves `WWW-Authenticate: OAuth realm=...`, usa este plan B:
+
+1. Crea un PAT manualmente en Jira UI con el service account.
+2. Cargalo en `.env` con el script:
+
+```powershell
+.\set-env-from-existing-pat.ps1 -Force
+```
+
+3. Ejecuta el extractor:
+
+```powershell
+docker compose up --build
+```
