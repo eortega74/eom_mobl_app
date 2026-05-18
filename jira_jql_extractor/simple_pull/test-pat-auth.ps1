@@ -53,15 +53,29 @@ if (Get-Command Invoke-WebRequest -ErrorAction SilentlyContinue) {
     $supportsSkipCertificateCheck = $cmd.Parameters.ContainsKey("SkipCertificateCheck")
 }
 
-$oldCertCallback = $null
+$oldCertPolicy = $null
 if ($SkipSslVerify) {
     if ($supportsSkipCertificateCheck) {
         $invokeParams.SkipCertificateCheck = $true
     }
     else {
         # Windows PowerShell 5.1 fallback
-        $oldCertCallback = [System.Net.ServicePointManager]::ServerCertificateValidationCallback
-        [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+        $oldCertPolicy = [System.Net.ServicePointManager]::CertificatePolicy
+        if (-not ("TrustAllCertsPolicy" -as [type])) {
+            Add-Type @"
+using System.Net;
+using System.Security.Cryptography.X509Certificates;
+
+public class TrustAllCertsPolicy : ICertificatePolicy
+{
+    public bool CheckValidationResult(ServicePoint srvPoint, X509Certificate certificate, WebRequest request, int certificateProblem)
+    {
+        return true;
+    }
+}
+"@
+        }
+        [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
         try {
             [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
         }
@@ -152,7 +166,7 @@ try {
     }
 }
 finally {
-    if ($SkipSslVerify -and (-not $supportsSkipCertificateCheck) -and ($null -ne $oldCertCallback)) {
-        [System.Net.ServicePointManager]::ServerCertificateValidationCallback = $oldCertCallback
+    if ($SkipSslVerify -and (-not $supportsSkipCertificateCheck) -and ($null -ne $oldCertPolicy)) {
+        [System.Net.ServicePointManager]::CertificatePolicy = $oldCertPolicy
     }
 }
