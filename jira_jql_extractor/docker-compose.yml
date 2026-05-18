@@ -2,6 +2,10 @@ services:
   jira-exporter:
     build: .
     container_name: jira-jql-exporter
+    env_file:
+      - .env
+    environment:
+      - JIRA_PAT_TOKEN=${JIRA_PAT_TOKEN}
     volumes:
       - ./config.yaml:/app/config.yaml:ro
       - ./output:/app/output

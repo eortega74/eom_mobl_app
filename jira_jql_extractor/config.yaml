@@ -2,8 +2,11 @@ jira:
   base_url: "https://tu-dominio.atlassian.net"
   api_path: "/rest/api/3/search"
   field_api_path: "/rest/api/3/field"
-  email: "tu-correo@empresa.com"
-  api_token: "TU_API_TOKEN"
+  auth_type: "pat"   # pat (Bearer PAT) o basic (email + api_token)
+  pat_token_env: "JIRA_PAT_TOKEN"
+  # pat_token: "TU_PAT"
+  # email: "tu-correo@empresa.com"
+  # api_token: "TU_API_TOKEN"
   timeout_seconds: 30
   verify_ssl: true
   retry:

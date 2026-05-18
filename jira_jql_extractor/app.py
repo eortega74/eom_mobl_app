@@ -2,6 +2,7 @@ import argparse
 import csv
 from datetime import datetime, timezone
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -37,6 +38,30 @@ def uniq_keep_order(items: list) -> list:
     return result
 
 
+def resolve_auth_type(jira: dict) -> str:
+    raw_auth_type = str(jira.get("auth_type", "")).strip().lower()
+    if not raw_auth_type:
+        raw_auth_type = "pat" if jira.get("pat_token") or jira.get("pat_token_env") else "basic"
+
+    if raw_auth_type in {"pat", "bearer", "bearer_pat"}:
+        return "pat"
+    if raw_auth_type == "basic":
+        return "basic"
+    raise ValueError("jira.auth_type debe ser 'pat' o 'basic'")
+
+
+def resolve_pat_token(jira: dict) -> str:
+    token = str(jira.get("pat_token", "")).strip()
+    if token:
+        return token
+
+    env_name = str(jira.get("pat_token_env", "")).strip()
+    if env_name:
+        return str(os.getenv(env_name, "")).strip()
+
+    return ""
+
+
 def load_config(config_path: Path, require_jql: bool = True) -> dict:
     if not config_path.exists():
         raise FileNotFoundError(
@@ -50,11 +75,17 @@ def load_config(config_path: Path, require_jql: bool = True) -> dict:
     jira = config.get("jira", {})
     query = config.get("query", {})
 
+    auth_type = resolve_auth_type(jira)
+
     required = {
         "jira.base_url": jira.get("base_url"),
-        "jira.email": jira.get("email"),
-        "jira.api_token": jira.get("api_token"),
     }
+
+    if auth_type == "pat":
+        required["jira.pat_token|jira.pat_token_env"] = resolve_pat_token(jira)
+    else:
+        required["jira.email"] = jira.get("email")
+        required["jira.api_token"] = jira.get("api_token")
 
     if require_jql:
         required["query.jql"] = query.get("jql")
@@ -66,14 +97,40 @@ def load_config(config_path: Path, require_jql: bool = True) -> dict:
     return config
 
 
-def get_jira_connection(config: dict) -> tuple[str, str, str, int, bool]:
+def get_jira_connection(config: dict) -> tuple[str, dict, int, bool]:
     jira = config["jira"]
     base_url = jira["base_url"].rstrip("/")
-    email = jira["email"]
-    api_token = jira["api_token"]
+
+    auth_type = resolve_auth_type(jira)
+
+    if auth_type == "pat":
+        pat_token = resolve_pat_token(jira)
+        if not pat_token:
+            raise ValueError("No se encontro PAT. Configura jira.pat_token o jira.pat_token_env")
+        auth = {
+            "type": "pat",
+            "pat_token": pat_token,
+        }
+    elif auth_type == "basic":
+        auth = {
+            "type": "basic",
+            "email": jira["email"],
+            "api_token": jira["api_token"],
+        }
+    else:
+        raise ValueError("jira.auth_type debe ser 'pat' o 'basic'")
+
     timeout_seconds = int(jira.get("timeout_seconds", 30))
     verify_ssl = bool(jira.get("verify_ssl", True))
-    return base_url, email, api_token, timeout_seconds, verify_ssl
+    return base_url, auth, timeout_seconds, verify_ssl
+
+
+def get_request_auth(auth: dict) -> tuple[dict, tuple | None]:
+    headers = {"Accept": "application/json"}
+    if auth["type"] == "pat":
+        headers["Authorization"] = f"Bearer {auth['pat_token']}"
+        return headers, None
+    return headers, (auth["email"], auth["api_token"])
 
 
 def get_retry_options(config: dict) -> tuple[int, float]:
@@ -94,7 +151,7 @@ def get_retry_options(config: dict) -> tuple[int, float]:
 def fetch_issues(config: dict, verbose: bool = False, log_stream=None) -> tuple[list, dict]:
     query = config["query"]
 
-    base_url, email, api_token, timeout_seconds, verify_ssl = get_jira_connection(config)
+    base_url, auth_cfg, timeout_seconds, verify_ssl = get_jira_connection(config)
     api_path = config["jira"].get("api_path", "/rest/api/3/search")
     endpoint = f"{base_url}{api_path}"
 
@@ -102,7 +159,7 @@ def fetch_issues(config: dict, verbose: bool = False, log_stream=None) -> tuple[
     fields = build_requested_fields(config)
     page_size = int(query.get("page_size", 100))
 
-    headers = {"Accept": "application/json"}
+    headers, auth = get_request_auth(auth_cfg)
     issues = []
     start_at = 0
     total = None
@@ -130,7 +187,7 @@ def fetch_issues(config: dict, verbose: bool = False, log_stream=None) -> tuple[
                     endpoint,
                     headers=headers,
                     params=params,
-                    auth=(email, api_token),
+                    auth=auth,
                     timeout=timeout_seconds,
                     verify=verify_ssl,
                 )
@@ -194,14 +251,16 @@ def fetch_issues(config: dict, verbose: bool = False, log_stream=None) -> tuple[
 
 
 def fetch_fields_metadata(config: dict) -> list:
-    base_url, email, api_token, timeout_seconds, verify_ssl = get_jira_connection(config)
+    base_url, auth_cfg, timeout_seconds, verify_ssl = get_jira_connection(config)
     api_path = config.get("jira", {}).get("field_api_path", DEFAULT_FIELD_API_PATH)
     endpoint = f"{base_url}{api_path}"
 
+    headers, auth = get_request_auth(auth_cfg)
+
     response = requests.get(
         endpoint,
-        headers={"Accept": "application/json"},
-        auth=(email, api_token),
+        headers=headers,
+        auth=auth,
         timeout=timeout_seconds,
         verify=verify_ssl,
     )

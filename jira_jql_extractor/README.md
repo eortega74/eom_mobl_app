@@ -14,7 +14,7 @@ It supports:
 ## How It Works
 
 1. The script reads `config.yaml`.
-2. It authenticates against Jira using email + API token.
+2. It authenticates against Jira using PAT (Bearer) or email + API token.
 3. It executes your JQL in pages (`startAt`, `maxResults`) until all issues are fetched.
 4. It writes output as JSON or CSV.
 5. For CSV, it maps built-in and custom columns based on `output.csv` settings.
@@ -27,8 +27,11 @@ Edit `config.yaml`:
 - `jira.base_url`: Jira base URL (Cloud or Server)
 - `jira.api_path`: search endpoint (default `/rest/api/3/search`)
 - `jira.field_api_path`: field metadata endpoint (default `/rest/api/3/field`)
-- `jira.email`: Jira account email
-- `jira.api_token`: Jira API token
+- `jira.auth_type`: `pat` (recommended for Jira Server/DC) or `basic` (Jira Cloud)
+- `jira.pat_token_env`: environment variable name that stores the PAT (recommended)
+- `jira.pat_token`: personal access token used with `Authorization: Bearer <token>`
+- `jira.email`: Jira account email (used only when `auth_type: basic`)
+- `jira.api_token`: Jira API token (used only when `auth_type: basic`)
 - `jira.retry.max_attempts`: max attempts per Jira request (default `3`)
 - `jira.retry.backoff_seconds`: exponential backoff base in seconds (default `1.0`)
 - `query.jql`: JQL query
@@ -47,6 +50,12 @@ CSV-specific settings:
 - `output.csv.custom_fields`: map of CSV column name to Jira field id
 
 ## Run Locally (Python)
+
+Set your PAT in an environment variable (recommended):
+
+```powershell
+$env:JIRA_PAT_TOKEN = "tu_pat_real"
+```
 
 ```powershell
 cd jira_jql_extractor
@@ -74,10 +83,21 @@ python app.py --config config.yaml --verbose --verbose-log-file output/my_run.lo
 
 ## Run with Docker Compose
 
+Create `.env` from the example and set your PAT:
+
+```powershell
+cd jira_jql_extractor
+Copy-Item .env.example .env
+# Edita .env y coloca JIRA_PAT_TOKEN real
+```
+
 ```powershell
 cd jira_jql_extractor
 docker compose up --build
 ```
+
+Quick PAT creation guide (service account user/password):
+- See `README-PAT-SERVICE-ACCOUNT.md`
 
 ## New: Discover Jira Field IDs Automatically
 
@@ -188,6 +208,13 @@ This helps during long exports or intermittent network issues.
 
 ```yaml
 jira:
+  auth_type: "pat"
+  pat_token_env: "JIRA_PAT_TOKEN"
+  # pat_token: "TU_PAT"
+  # Para Jira Cloud tambien puedes usar:
+  # auth_type: "basic"
+  # email: "tu-correo@empresa.com"
+  # api_token: "TU_API_TOKEN"
   retry:
     max_attempts: 3
     backoff_seconds: 1.0
@@ -220,4 +247,6 @@ output:
 
 - Jira Cloud usually works with `/rest/api/3/...` endpoints.
 - Jira Server/Data Center may require `/rest/api/2/...` endpoints.
+- For Jira Server/Data Center with PAT, this project sends `Authorization: Bearer <pat_token>`.
+- If `jira.pat_token_env` is configured, the token is read from your environment at runtime.
 - If your Jira uses different custom field ids, use `--list-fields` first.
