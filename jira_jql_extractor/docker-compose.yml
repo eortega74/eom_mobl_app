@@ -1,0 +1,8 @@
+services:
+  jira-exporter:
+    build: .
+    container_name: jira-jql-exporter
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./output:/app/output
+    command: ["python", "app.py", "--config", "/app/config.yaml"]

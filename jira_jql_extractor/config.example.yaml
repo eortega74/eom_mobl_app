@@ -1,0 +1,52 @@
+jira:
+  base_url: "https://tu-dominio.atlassian.net"
+  api_path: "/rest/api/3/search"
+  field_api_path: "/rest/api/3/field"
+  email: "tu-correo@empresa.com"
+  api_token: "TU_API_TOKEN"
+  timeout_seconds: 30
+  verify_ssl: true
+  retry:
+    max_attempts: 3
+    backoff_seconds: 1.0
+
+query:
+  jql: "project = DEMO ORDER BY created DESC"
+  fields:
+    - summary
+    - status
+    - assignee
+    - reporter
+    - priority
+    - issuetype
+    - labels
+    - customfield_10020
+    - customfield_10014
+    - created
+    - updated
+  page_size: 100
+
+output:
+  format: "csv"   # json o csv
+  file_path: "output/issues.csv"
+  verbose_log_file: ""
+  metadata:
+    enabled: true
+    file_path: "output/metadata.json"
+  csv:
+    sprint_field: "customfield_10020"
+    columns:
+      - key
+      - summary
+      - status
+      - assignee
+      - reporter
+      - priority
+      - issue_type
+      - labels
+      - sprint
+      - epic_link
+      - created
+      - updated
+    custom_fields:
+      epic_link: "customfield_10014"
