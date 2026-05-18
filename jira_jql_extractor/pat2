@@ -1,0 +1,157 @@
+Using Personal Access Tokens
+Still need help?
+The Atlassian Community is here for you.
+
+Ask the community
+
+Personal access tokens (PATs) are a secure way to use scripts and integrate external applications with your Atlassian application. If an external system is compromised, you simply revoke the token instead of changing the password and consequently changing it in all scripts and integrations.
+
+Personal access tokens are a safe alternative to using username and password for authentication with various services. 
+
+This page explains how to create personal access tokens in Jira and Confluence.
+
+For information on using personal access tokens in other Atlassian products, see:
+
+Personal access tokens in Bamboo
+Personal access tokens in Bitbucket
+Before you begin
+You can create and use personal access tokens in Data Center and Server versions of the following Atlassian applications: 
+
+Jira Core 8.14 and later
+Jira Software 8.14 and later
+Jira Service Management 4.15 and later
+Confluence 7.9 and later 
+The admin view of personal access tokens is available in the Data Center version of these applications. 
+
+Creating PATs in the application
+All users are allowed to create their own PATs, which will match their current permission level. To create the tokens, you may follow these steps:
+
+In your Atlassian application go to:
+In Confluence, select your avatar at the top right of the screen, then go to Settings and select Personal access tokens.
+In Jira, select your avatar at the top right of the screen, then select Profile. Once you access your profile, select Personal access tokens in the left-hand menu.
+Select Create token.
+Give your new token a name.
+Optionally, for security reasons, you can set your token to automatically expire after a set number of days. 
+
+The EXPIRES SOON status appears 5 days before the actual expiration date. Once the token expires, you can't reactivate it. You must create a new token.
+
+Select Create.
+
+Your personal access token is created. Copy the token and store it in a safe space.
+
+You won’t be able to see your token again once you select Close.
+Creating PATs using REST API
+To create the PAT using REST API, you can send a POST HTTP request as exemplified below, and in response, you'll receive the PAT. Please note that you cannot create PATs on behalf of someone else.
+(info) Be sure to replace the {{baseUrlOfYourInstance}} with the actual URL for your Jira/Confluence instance.
+
+Endpoint address
+{{baseUrlOfYourInstance}}/rest/pat/latest/tokens
+JSON body
+{
+    "name": "tokenName",
+    "expirationDuration": 90
+}
+Through the expirationDuration parameter, you can define the number of days for which your token will remain valid.
+
+The expirationDuration is optional in the JSON body.
+
+(warning) In order to create the PAT through the REST endpoint you'll need to make sure to authenticate yourself on the request, so that Jira can verify if you are eligible to create a PAT, and also to which user associate it to.
+
+Example of how the request can be made with authentication using curl:
+Using Basic Auth
+curl -X POST {{baseUrlOfYourInstance}}/rest/pat/latest/tokens -H "Content-Type: application/json" -d '{"name": "tokenName","expirationDuration": 90}' --user "username:password"
+Using a PAT
+curl -X POST {{baseUrlOfYourInstance}}/rest/pat/latest/tokens -H "Authorization: Bearer <Token>" -H "Content-Type: application/json" -d '{"name": "tokenName","expirationDuration": 90}'
+Using PATs
+To use a personal access token for authentication, you have to pass it as a bearer token in the Authorization header of a REST API call.
+
+Here's an example using cURL to call the REST API with a bearer token: 
+
+curl -H "Authorization: Bearer <yourToken>" https://{baseUrlOfYourInstance}/rest/api/content
+(info) A couple of important notes:
+The {{baseUrlOfYourInstance}} tag is an example, and should be replaced with the actual URL for your Jira/Confluence instance.
+The /rest/api/content endpoint is not a valid one, and should also only be considered as an example. A listing of the REST API endpoints for Jira & Confluence can be found on the Jira Server platform REST API reference and Confluence Server platform REST API reference pages respectively.
+For the PAT authentication, you should only replace <yourToken> with the actual PAT. The "Bearer" part should not be changed, nor should you need to inform which user is making the request.
+If attempting to use the PAT on a script or with some other method, you should still follow the Bearer Token OAuth standard.
+Revoking PATs
+If for any reason, for instance, a security breach, you need to revoke your token, you can do it quickly from your Atlassian application: 
+
+In your Atlassian application go to:
+In Jira select your avatar at the top right of the screen, then select Personal access tokens.
+In Confluence, select your avatar at the top right of the screen, then go to Settings and select Personal access tokens.
+Select Revoke next to the token you want to delete.
+Confirm your choice. 
+Your token is now revoked and can't be used for further authentication. 
+
+Limit token creation
+Administrators can use system properties to limit the number of tokens people can create, and set expiry rules. 
+
+
+
+Show me what system properties I can use to manage personal access tokens...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ To find out how to apply system properties in your application:
+
+For Jira, see Setting properties and options on startup
+For Confluence, see  Configuring System Properties
+Administer personal access tokens  
+This feature is available with a Data Center license.
+
+In Data Center applications, administrators can see a list of all tokens created in the site, and revoke any of these tokens.
+
+
+
+
+
+To administer personal access tokens:
+
+In your Atlassian application go to:
+In Jira, select  > System > Administering personal access tokens.
+In Confluence, select  >  Users & Security > Administering personal access tokens .
+In this view, you can filter your tokens by the author, creation and expiration date, and the last time the token was used for authentication. Admins can revoke individual tokens and delete multiple tokens at once. To bulk revoke, select tokens you want to revoke, and click Bulk revoke. 
+
