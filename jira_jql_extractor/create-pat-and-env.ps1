@@ -28,9 +28,19 @@ function Get-HttpErrorDetails {
 
     $statusCode = "unknown"
     $responseBody = ""
+    $responseHeaders = @{}
 
     if ($Exception.Response -and $Exception.Response.StatusCode) {
         $statusCode = [int]$Exception.Response.StatusCode
+    }
+
+    try {
+        if ($Exception.Response -and $Exception.Response.Headers) {
+            foreach ($headerName in $Exception.Response.Headers.AllKeys) {
+                $responseHeaders[$headerName] = [string]$Exception.Response.Headers[$headerName]
+            }
+        }
+    } catch {
     }
 
     try {
@@ -48,6 +58,7 @@ function Get-HttpErrorDetails {
     return [PSCustomObject]@{
         StatusCode = $statusCode
         Body = $responseBody
+        Headers = $responseHeaders
     }
 }
 
@@ -184,6 +195,10 @@ try {
                 "No se pudo crear el PAT (fallback de sesion tambien fallo).",
                 "Status basic: $statusCode",
                 "Status session: $($sessionDetails.StatusCode)",
+                "Header basic X-Seraph-LoginReason: $($details.Headers['X-Seraph-LoginReason'])",
+                "Header session X-Seraph-LoginReason: $($sessionDetails.Headers['X-Seraph-LoginReason'])",
+                "Header basic WWW-Authenticate: $($details.Headers['WWW-Authenticate'])",
+                "Header session WWW-Authenticate: $($sessionDetails.Headers['WWW-Authenticate'])",
                 "Sugerencias:",
                 "- Verifica formato de usuario: DOMAIN\\usuario o usuario@dominio.",
                 "- Confirma que el usuario puede crear PAT en Jira.",
@@ -197,6 +212,8 @@ try {
         $msg = @(
             "No se pudo crear el PAT.",
             "Status: $statusCode",
+            "Header X-Seraph-LoginReason: $($details.Headers['X-Seraph-LoginReason'])",
+            "Header WWW-Authenticate: $($details.Headers['WWW-Authenticate'])",
             "Body: $($details.Body)"
         ) -join [Environment]::NewLine
         throw $msg

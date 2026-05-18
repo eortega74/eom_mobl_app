@@ -16,7 +16,7 @@ cd c:\Users\eomar\OneDrive\eom_dock_img\repos\BPPR\eom_mobl_app\jira_jql_extract
 Ejecuta:
 
 ```powershell
-.\create-pat-and-env.ps1 -BaseUrl "https://jira.tuempresa.com" -ServiceAccountUser "svc_jira"
+.\create-pat-and-env.ps1 -BaseUrl "<JIRA_URL>" -ServiceAccountUser "<SERVICE_ACCOUNT_USER>"
 ```
 
 El script:
@@ -27,7 +27,13 @@ El script:
 Si ya existe `.env` y deseas reemplazarlo:
 
 ```powershell
-.\create-pat-and-env.ps1 -BaseUrl "https://jira.tuempresa.com" -ServiceAccountUser "svc_jira" -Force
+.\create-pat-and-env.ps1 -BaseUrl "<JIRA_URL>" -ServiceAccountUser "<SERVICE_ACCOUNT_USER>" -Force
+```
+
+Alternativa de usuario (UPN), si tu dominio lo requiere:
+
+```powershell
+.\create-pat-and-env.ps1 -BaseUrl "<JIRA_URL>" -ServiceAccountUser "<SERVICE_ACCOUNT_USER_UPN>" -Force
 ```
 
 ## 3) Validar configuracion
@@ -76,5 +82,5 @@ Por defecto se generan archivos en la carpeta `output/` (segun `config.yaml`):
 ## Comando completo de referencia
 
 ```powershell
-.\create-pat-and-env.ps1 -BaseUrl "https://jira.tuempresa.com" -ServiceAccountUser "svc_jira" -TokenName "jira-exporter-pat" -ExpirationDays 90 -EnvPath ".env" -Force
+.\create-pat-and-env.ps1 -BaseUrl "<JIRA_URL>" -ServiceAccountUser "<SERVICE_ACCOUNT_USER>" -TokenName "jira-exporter-pat" -ExpirationDays 90 -EnvPath ".env" -Force
 ```

@@ -13,13 +13,13 @@ Ejemplo rapido:
 
 ```powershell
 cd jira_jql_extractor
-.\create-pat-and-env.ps1 -BaseUrl "https://jira.tuempresa.com" -ServiceAccountUser "svc_jira"
+.\create-pat-and-env.ps1 -BaseUrl "<JIRA_URL>" -ServiceAccountUser "<SERVICE_ACCOUNT_USER>"
 ```
 
 Si quieres reemplazar un `.env` existente:
 
 ```powershell
-.\create-pat-and-env.ps1 -BaseUrl "https://jira.tuempresa.com" -ServiceAccountUser "svc_jira" -Force
+.\create-pat-and-env.ps1 -BaseUrl "<JIRA_URL>" -ServiceAccountUser "<SERVICE_ACCOUNT_USER>" -Force
 ```
 
 Opcionales:
@@ -95,8 +95,8 @@ Si responde datos del usuario, el PAT funciona.
 ## Si aparece 401 Unauthorized
 
 Prueba estas variantes del usuario:
-- `DOMAIN\\usuario` (ejemplo: `adxrt.com\\svc003736`)
-- `usuario@dominio` (ejemplo: `svc003736@adxrt.com`)
+- `DOMAIN\\usuario` (ejemplo: `corp\\svc_jira`)
+- `usuario@dominio` (ejemplo: `svc_jira@corp.com`)
 
 Verifica tambien:
 - Que el usuario tenga permiso para crear PAT
