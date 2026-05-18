@@ -47,8 +47,27 @@ $invokeParams = @{
     ErrorAction = "Stop"
 }
 
+$supportsSkipCertificateCheck = $false
+if (Get-Command Invoke-WebRequest -ErrorAction SilentlyContinue) {
+    $cmd = Get-Command Invoke-WebRequest
+    $supportsSkipCertificateCheck = $cmd.Parameters.ContainsKey("SkipCertificateCheck")
+}
+
+$oldCertCallback = $null
 if ($SkipSslVerify) {
-    $invokeParams.SkipCertificateCheck = $true
+    if ($supportsSkipCertificateCheck) {
+        $invokeParams.SkipCertificateCheck = $true
+    }
+    else {
+        # Windows PowerShell 5.1 fallback
+        $oldCertCallback = [System.Net.ServicePointManager]::ServerCertificateValidationCallback
+        [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+        try {
+            [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+        }
+        catch {
+        }
+    }
 }
 
 function Show-Result {
@@ -92,41 +111,48 @@ function Show-Result {
 }
 
 try {
-    $response = Invoke-WebRequest @invokeParams
-    $statusCode = [int]$response.StatusCode
-    $contentType = [string]$response.Headers["Content-Type"]
-    $location = [string]$response.Headers["Location"]
-    $body = [string]$response.Content
-
-    Show-Result -StatusCode $statusCode -ContentType $contentType -Location $location -Body $body
-}
-catch {
-    $exception = $_.Exception
-    if ($exception.Response) {
-        $response = $exception.Response
+    try {
+        $response = Invoke-WebRequest @invokeParams
         $statusCode = [int]$response.StatusCode
         $contentType = [string]$response.Headers["Content-Type"]
         $location = [string]$response.Headers["Location"]
-
-        $body = ""
-        try {
-            if ($response.GetResponseStream) {
-                $stream = $response.GetResponseStream()
-                if ($stream) {
-                    $reader = New-Object System.IO.StreamReader($stream)
-                    $body = $reader.ReadToEnd()
-                    $reader.Close()
-                }
-            }
-        }
-        catch {
-            $body = ""
-        }
+        $body = [string]$response.Content
 
         Show-Result -StatusCode $statusCode -ContentType $contentType -Location $location -Body $body
+    }
+    catch {
+        $exception = $_.Exception
+        if ($exception.Response) {
+            $response = $exception.Response
+            $statusCode = [int]$response.StatusCode
+            $contentType = [string]$response.Headers["Content-Type"]
+            $location = [string]$response.Headers["Location"]
+
+            $body = ""
+            try {
+                if ($response.GetResponseStream) {
+                    $stream = $response.GetResponseStream()
+                    if ($stream) {
+                        $reader = New-Object System.IO.StreamReader($stream)
+                        $body = $reader.ReadToEnd()
+                        $reader.Close()
+                    }
+                }
+            }
+            catch {
+                $body = ""
+            }
+
+            Show-Result -StatusCode $statusCode -ContentType $contentType -Location $location -Body $body
+            exit 1
+        }
+
+        Write-Host "Request failed: $exception" -ForegroundColor Red
         exit 1
     }
-
-    Write-Host "Request failed: $exception" -ForegroundColor Red
-    exit 1
+}
+finally {
+    if ($SkipSslVerify -and (-not $supportsSkipCertificateCheck) -and ($null -ne $oldCertCallback)) {
+        [System.Net.ServicePointManager]::ServerCertificateValidationCallback = $oldCertCallback
+    }
 }
