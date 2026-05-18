@@ -48,9 +48,15 @@ $invokeParams = @{
 }
 
 $supportsSkipCertificateCheck = $false
+$supportsUseBasicParsing = $false
 if (Get-Command Invoke-WebRequest -ErrorAction SilentlyContinue) {
     $cmd = Get-Command Invoke-WebRequest
     $supportsSkipCertificateCheck = $cmd.Parameters.ContainsKey("SkipCertificateCheck")
+    $supportsUseBasicParsing = $cmd.Parameters.ContainsKey("UseBasicParsing")
+}
+
+if ($supportsUseBasicParsing) {
+    $invokeParams.UseBasicParsing = $true
 }
 
 $oldCertPolicy = $null
