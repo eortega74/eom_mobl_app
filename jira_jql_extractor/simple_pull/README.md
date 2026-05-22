@@ -7,6 +7,7 @@ Esta carpeta contiene un ejemplo minimo para extraer issues desde Jira usando PA
 - `jira_pull_simple.py`: script .py que consulta Jira Search API
 - `requirements.txt`: dependencia minima (`requests`)
 - `run-simple-pull.ps1`: instala pip deps y ejecuta en un paso
+- `check-project-and-pull.ps1`: valida acceso al proyecto y exporta a `json` o `csv`
 
 ## Opcion 1: usar script PowerShell (recomendada)
 
@@ -16,6 +17,26 @@ cd ..\simple_pull
 ```
 
 El script pedira el PAT de forma oculta y generara `jira_issues.json`.
+
+## Opcion 1.1: validar proyecto + exportar JSON/CSV
+
+Exportar en JSON (default):
+
+```powershell
+.\check-project-and-pull.ps1 -BaseUrl "https://jira.tuempresa.com" -Project "NAFM" -SkipSslVerify
+```
+
+Exportar en CSV:
+
+```powershell
+.\check-project-and-pull.ps1 -BaseUrl "https://jira.tuempresa.com" -Project "NAFM" -OutputFormat csv -OutputFile "nafm_issues.csv" -SkipSslVerify
+```
+
+Ver ayuda del script:
+
+```powershell
+.\check-project-and-pull.ps1 -Help
+```
 
 ## Opcion 2: correr manual
 

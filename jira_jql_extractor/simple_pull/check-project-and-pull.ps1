@@ -1,3 +1,18 @@
+<#
+.SYNOPSIS
+Valida acceso a proyecto Jira y ejecuta un pull de issues con PAT.
+
+.DESCRIPTION
+1) Consulta proyectos visibles para validar acceso al proyecto.
+2) Ejecuta JQL sobre ese proyecto.
+3) Exporta resultados en formato JSON o CSV.
+
+.EXAMPLE
+.\check-project-and-pull.ps1 -BaseUrl "https://jira.tuempresa.com" -Project "NAFM" -SkipSslVerify
+
+.EXAMPLE
+.\check-project-and-pull.ps1 -BaseUrl "https://jira.tuempresa.com" -Project "NAFM" -OutputFormat csv -OutputFile "nafm_issues.csv"
+#>
 param(
     [Parameter(Mandatory = $false)]
     [string]$BaseUrl = "",
@@ -21,10 +36,40 @@ param(
     [string]$OutputFile = "jira_issues.json",
 
     [Parameter(Mandatory = $false)]
+    [ValidateSet("json", "csv")]
+    [string]$OutputFormat = "json",
+
+    [Parameter(Mandatory = $false)]
+    [switch]$Help,
+
+    [Parameter(Mandatory = $false)]
     [switch]$SkipSslVerify
 )
 
 $ErrorActionPreference = "Stop"
+
+function Show-ScriptHelp {
+    Write-Host "Uso:" -ForegroundColor Cyan
+    Write-Host "  .\check-project-and-pull.ps1 -BaseUrl <url> -Project <key|name> [opciones]"
+    Write-Host ""
+    Write-Host "Opciones:" -ForegroundColor Cyan
+    Write-Host "  -Jql <texto>              JQL a ejecutar. Si no se envia, usa project=<key>."
+    Write-Host "  -ApiVersion <valor>       latest (default), 2 o 3."
+    Write-Host "  -MaxResults <numero>      Cantidad maxima de issues. Default: 50."
+    Write-Host "  -OutputFormat <json|csv>  Formato de salida. Default: json."
+    Write-Host "  -OutputFile <ruta>        Archivo de salida."
+    Write-Host "  -SkipSslVerify            Deshabilita verificacion SSL (diagnostico)."
+    Write-Host "  -Help                     Muestra esta ayuda."
+    Write-Host ""
+    Write-Host "Ejemplos:" -ForegroundColor Cyan
+    Write-Host "  .\check-project-and-pull.ps1 -BaseUrl https://jira.tuempresa.com -Project NAFM"
+    Write-Host "  .\check-project-and-pull.ps1 -BaseUrl https://jira.tuempresa.com -Project NAFM -OutputFormat csv"
+}
+
+if ($Help) {
+    Show-ScriptHelp
+    exit 0
+}
 
 if ([string]::IsNullOrWhiteSpace($BaseUrl)) {
     $BaseUrl = Read-Host "Jira Base URL (ej: https://jira.tuempresa.com)"
@@ -110,6 +155,37 @@ function Invoke-JiraGet {
     return ($resp.Content | ConvertFrom-Json)
 }
 
+function Convert-IssuesToCsvRows {
+    param(
+        [array]$Issues
+    )
+
+    $rows = @()
+    foreach ($issue in $Issues) {
+        $fields = $issue.fields
+        $statusName = ""
+        if ($fields.status -and $fields.status.name) {
+            $statusName = [string]$fields.status.name
+        }
+
+        $assigneeName = ""
+        if ($fields.assignee -and $fields.assignee.displayName) {
+            $assigneeName = [string]$fields.assignee.displayName
+        }
+
+        $rows += [PSCustomObject]@{
+            key = [string]$issue.key
+            summary = [string]$fields.summary
+            status = $statusName
+            assignee = $assigneeName
+            created = [string]$fields.created
+            updated = [string]$fields.updated
+        }
+    }
+
+    return $rows
+}
+
 try {
     $projectsUri = "$BaseUrl/rest/api/$ApiVersion/project"
     Write-Host "Consultando proyectos visibles..." -ForegroundColor Cyan
@@ -148,8 +224,26 @@ try {
     $issues = @($searchPayload.issues)
     Write-Host ("Issues obtenidos: {0}" -f $issues.Count) -ForegroundColor Green
 
-    $searchPayload | ConvertTo-Json -Depth 100 | Set-Content -Path $OutputFile -Encoding UTF8
-    Write-Host ("Archivo generado: {0}" -f (Resolve-Path $OutputFile)) -ForegroundColor Green
+    $resolvedOutputFile = $OutputFile
+    if (-not $PSBoundParameters.ContainsKey("OutputFile")) {
+        if ($OutputFormat -eq "csv") {
+            $resolvedOutputFile = "jira_issues.csv"
+        }
+        else {
+            $resolvedOutputFile = "jira_issues.json"
+        }
+    }
+
+    if ($OutputFormat -eq "csv") {
+        $csvRows = Convert-IssuesToCsvRows -Issues $issues
+        $csvRows | Export-Csv -Path $resolvedOutputFile -NoTypeInformation -Encoding UTF8
+    }
+    else {
+        $searchPayload | ConvertTo-Json -Depth 100 | Set-Content -Path $resolvedOutputFile -Encoding UTF8
+    }
+
+    Write-Host ("Formato de salida: {0}" -f $OutputFormat) -ForegroundColor Green
+    Write-Host ("Archivo generado: {0}" -f (Resolve-Path $resolvedOutputFile)) -ForegroundColor Green
 
     $issues | Select-Object -First 10 | ForEach-Object {
         Write-Host ("{0}: {1}" -f $_.key, $_.fields.summary)
