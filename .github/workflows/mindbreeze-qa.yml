@@ -1,0 +1,38 @@
+name: Mindbreeze QA Runner
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'Mindbreeze_Copy_unzipped/Mindbreeze/**'
+      - '.github/workflows/mindbreeze-qa.yml'
+
+jobs:
+  playwright-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.55.0-jammy
+    defaults:
+      run:
+        working-directory: Mindbreeze_Copy_unzipped/Mindbreeze
+
+    env:
+      MINDBREEZE_BASE_URL: ${{ secrets.MINDBREEZE_BASE_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Run tests
+        run: npm test
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mindbreeze-playwright-report
+          path: Mindbreeze_Copy_unzipped/Mindbreeze/playwright-report
+          if-no-files-found: ignore
